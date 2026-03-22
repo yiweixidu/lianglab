@@ -78,7 +78,6 @@
             border-bottom-color: var(--gold-accent);
             color: var(--gold-accent);
         }
-        /* 管理导航栏：平时隐藏，admin模式时显示 */
         .admin-nav-bar {
             display: none;
             gap: 1rem;
@@ -112,11 +111,9 @@
             color: white !important;
         }
         .page-content {
-            flex: 1;  /* 撑满剩余空间，footer 自动到底 */
+            flex: 1;
             padding: 3rem 0 4rem;
         }
-        
-        /* 普通视图样式 */
         .members-grid, .alumni-grid, .events-grid, .community-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -217,14 +214,8 @@
         .research-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap:1.5rem; margin-top:1.5rem; }
         .research-card { background:#F9FBFD; border-radius:24px; padding:1.5rem; border:1px solid var(--border-light); }
         .contact-info { background:#F9FBFD; border-radius:28px; padding:2rem; }
-        
-        /* 管理视图样式 */
-        .admin-view-container {
-            display: none;
-        }
-        .admin-view-container.active {
-            display: block;
-        }
+        .admin-view-container { display: none; }
+        .admin-view-container.active { display: block; }
         .admin-panel {
             background: #f9fbfd;
             border-radius: 28px;
@@ -238,9 +229,7 @@
             border: 1px solid var(--border-light);
             border-radius: 16px;
         }
-        .data-list {
-            margin-top: 2rem;
-        }
+        .data-list { margin-top: 2rem; }
         .data-item {
             display: flex;
             justify-content: space-between;
@@ -301,7 +290,7 @@
             <li><a href="/events">Events</a></li>
             <li><a href="/contact">Contact</a></li>
         </ul>
-        <!-- 管理导航栏 -->
+        <!-- 管理导航栏（初始隐藏） -->
         <div class="admin-nav-bar" id="adminNavBar">
             <a href="#" data-admin-tab="publications">Manage Publications</a>
             <a href="#" data-admin-tab="members">Manage Members</a>
@@ -314,12 +303,8 @@
 </header>
 
 <main class="page-content">
-    <!-- 普通视图容器 -->
     <div class="container" id="public-container"></div>
-    <!-- 管理视图容器 -->
-    <div class="container admin-view-container" id="admin-container">
-        <div id="admin-content"></div>
-    </div>
+    <div class="container admin-view-container" id="admin-container"></div>
 </main>
 
 <footer>
@@ -369,7 +354,6 @@
     function loadData() { const saved = localStorage.getItem("lianglab_db"); if (saved) db = JSON.parse(saved); else saveData(); }
     function saveData() { localStorage.setItem("lianglab_db", JSON.stringify(db)); }
 
-    // 双语资源
     const strings = {
         en: {
             home_title: "Chen Liang Lab",
@@ -480,7 +464,7 @@
 
     // 管理面板渲染
     function renderAdminTab(tab) {
-        const container = document.getElementById("admin-content");
+        const container = document.getElementById("admin-container");
         if (!container) return;
         let html = `<div class="admin-panel">`;
         if (tab === "publications") {
@@ -598,7 +582,7 @@
         document.getElementById("adminEventForm").reset();
     }
     
-    // 视图切换
+    // 管理员模式开关
     function setAdminMode(active) {
         isAdminMode = active;
         const publicNav = document.getElementById("publicNav");
@@ -611,6 +595,10 @@
             publicContainer.style.display = "none";
             adminContainer.classList.add("active");
             renderAdminTab(currentAdminTab);
+            // 更新 URL 为 /admin（但不触发路由）
+            if (window.location.pathname !== "/admin") {
+                history.pushState(null, "", "/admin");
+            }
         } else {
             publicNav.style.display = "flex";
             adminNav.style.display = "none";
@@ -618,45 +606,11 @@
             adminContainer.classList.remove("active");
             renderPublicPage(currentPage);
             updateNavActive(currentPage);
-        }
-    }
-    
-    // 更新普通导航激活状态
-    function updateNavActive(page) {
-        document.querySelectorAll("#publicNav a").forEach(link => {
-            const href = link.getAttribute("href");
-            if (href === `/${page}` || (page === "home" && href === "/")) {
-                link.classList.add("active");
-            } else {
-                link.classList.remove("active");
+            // 恢复 URL 到当前普通页面
+            const targetPath = currentPage === "home" ? "/" : `/${currentPage}`;
+            if (window.location.pathname !== targetPath) {
+                history.pushState(null, "", targetPath);
             }
-        });
-    }
-    
-    // 路由核心：根据路径渲染
-    function navigateTo(path, push = true) {
-        let page = path === "/" ? "home" : path.slice(1);
-        const validPages = ["home","research","publications","members","alumni","community","events","contact"];
-        if (!validPages.includes(page)) page = "home";
-        
-        if (push) history.pushState(null, "", page === "home" ? "/" : `/${page}`);
-        
-        if (isAdminMode) setAdminMode(false);
-        currentPage = page;
-        renderPublicPage(page);
-        updateNavActive(page);
-    }
-    
-    // 处理 admin 路由
-    function navigateToAdmin(push = true) {
-        if (push) history.pushState(null, "", "/admin");
-        if (!isAdminMode) {
-            showAuthModal((success) => {
-                if (success) setAdminMode(true);
-                else navigateTo("/", true);
-            });
-        } else {
-            setAdminMode(true);
         }
     }
     
@@ -694,7 +648,50 @@
         };
     }
     
-    // 事件监听
+    // 管理员入口函数（验证后进入）
+    function enterAdmin() {
+        if (isAdminMode) return;
+        showAuthModal((success) => {
+            if (success) setAdminMode(true);
+        });
+    }
+    
+    // 路由导航（普通页面）
+    function navigateTo(path, push = true) {
+        let page = path === "/" ? "home" : path.slice(1);
+        const validPages = ["home","research","publications","members","alumni","community","events","contact"];
+        if (!validPages.includes(page)) page = "home";
+        
+        if (push) {
+            const newPath = page === "home" ? "/" : `/${page}`;
+            history.pushState(null, "", newPath);
+        }
+        if (isAdminMode) setAdminMode(false);
+        currentPage = page;
+        renderPublicPage(page);
+        updateNavActive(page);
+    }
+    
+    function updateNavActive(page) {
+        document.querySelectorAll("#publicNav a").forEach(link => {
+            const href = link.getAttribute("href");
+            if (href === `/${page}` || (page === "home" && href === "/")) {
+                link.classList.add("active");
+            } else {
+                link.classList.remove("active");
+            }
+        });
+    }
+    
+    // 键盘快捷键 Ctrl+Shift+A 触发管理员入口
+    document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.shiftKey && e.key === "A") {
+            e.preventDefault();
+            enterAdmin();
+        }
+    });
+    
+    // 事件绑定
     document.getElementById("homeLink").addEventListener("click", (e) => {
         e.preventDefault();
         navigateTo("/");
@@ -734,21 +731,31 @@
     document.getElementById("langEnFooter").addEventListener("click", () => setLanguage("en"));
     document.getElementById("langFrFooter").addEventListener("click", () => setLanguage("fr"));
     
-    // 路由初始化 & 监听 popstate
-    function handlePopState() {
+    // 初始化路由：根据当前路径决定显示
+    function handleInitialRoute() {
         const path = window.location.pathname;
         if (path === "/admin") {
-            if (!isAdminMode) navigateToAdmin(false);
-            else setAdminMode(true);
+            // 直接访问 /admin，触发管理员验证
+            enterAdmin();
         } else {
-            if (isAdminMode) setAdminMode(false);
-            navigateTo(path || "/", false);
+            navigateTo(path, false);
         }
     }
     
-    window.addEventListener("popstate", handlePopState);
+    // 监听 popstate（浏览器前进后退）
+    window.addEventListener("popstate", () => {
+        const path = window.location.pathname;
+        if (path === "/admin") {
+            if (!isAdminMode) enterAdmin();
+            // 如果已经处于 admin 模式，什么都不做
+        } else {
+            if (isAdminMode) setAdminMode(false);
+            navigateTo(path, false);
+        }
+    });
+    
     loadData();
-    handlePopState();  // 初次加载
+    handleInitialRoute();
     setLanguage("en");
 </script>
 </body>
