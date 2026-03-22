@@ -236,6 +236,22 @@
             align-items: center;
             padding: 0.75rem 0;
             border-bottom: 1px solid var(--border-light);
+            cursor: grab;
+            background: white;
+            transition: background 0.1s;
+        }
+        .data-item:active {
+            cursor: grabbing;
+        }
+        .data-item.dragging {
+            opacity: 0.4;
+            cursor: grabbing;
+        }
+        .data-item .drag-handle {
+            margin-right: 12px;
+            color: #888;
+            font-size: 1rem;
+            cursor: grab;
         }
         .delete-btn {
             background: none;
@@ -243,6 +259,7 @@
             color: #e18335;
             cursor: pointer;
             font-size: 0.8rem;
+            margin-left: 12px;
         }
         .modal {
             position: fixed;
@@ -395,6 +412,67 @@
     let currentAdminTab = "publications";
     let isAdminMode = false;
 
+    // 拖拽排序全局变量
+    let dragSourceIndex = null;
+    let dragSourceList = null;
+    let dragTargetElement = null;
+
+    // 通用拖拽排序初始化 (为某个列表容器绑定事件)
+    function initDragSort(containerId, dataArrayKey, refreshCallback) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        // 使用事件委托，因为列表项可能会被重新渲染
+        container.addEventListener('dragstart', (e) => {
+            const item = e.target.closest('.data-item');
+            if (!item) return;
+            dragSourceIndex = parseInt(item.getAttribute('data-index'));
+            dragSourceList = dataArrayKey;
+            e.dataTransfer.setData('text/plain', dragSourceIndex);
+            e.dataTransfer.effectAllowed = 'move';
+            item.classList.add('dragging');
+        });
+        
+        container.addEventListener('dragend', (e) => {
+            const item = e.target.closest('.data-item');
+            if (item) item.classList.remove('dragging');
+            dragSourceIndex = null;
+            dragSourceList = null;
+        });
+        
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const targetItem = e.target.closest('.data-item');
+            if (!targetItem) return;
+            const targetIndex = parseInt(targetItem.getAttribute('data-index'));
+            if (dragSourceIndex !== null && dragSourceList === dataArrayKey && dragSourceIndex !== targetIndex) {
+                // 移动数组元素
+                const arr = db[dataArrayKey];
+                const [moved] = arr.splice(dragSourceIndex, 1);
+                arr.splice(targetIndex, 0, moved);
+                saveData();
+                refreshCallback();  // 重新渲染列表
+                // 刷新公共页面显示（如果当前普通页面是相关页面）
+                if (!isAdminMode && (currentPage === dataArrayKey || 
+                    (dataArrayKey === 'publications' && currentPage === 'publications') ||
+                    (dataArrayKey === 'members' && currentPage === 'members') ||
+                    (dataArrayKey === 'alumni' && currentPage === 'alumni') ||
+                    (dataArrayKey === 'community' && currentPage === 'community') ||
+                    (dataArrayKey === 'events' && currentPage === 'events'))) {
+                    renderPublicPage(currentPage);
+                } else if (isAdminMode && currentAdminTab === dataArrayKey.slice(0,-1)) {
+                    // 如果当前管理页面是同一个，重新渲染管理标签页以更新列表
+                    renderAdminTab(currentAdminTab);
+                }
+            }
+        });
+    }
+
     // 渲染普通页面
     function renderPublicPage(page) {
         const container = document.getElementById("public-container");
@@ -423,7 +501,7 @@
             `;
         } else if (page === "publications") {
             let pubHtml = `<h2 class="section-title">${t.publications_title}</h2>`;
-            db.publications.sort((a,b)=>b.year-a.year).forEach(p => {
+            db.publications.slice().sort((a,b)=>b.year-a.year).forEach(p => {
                 pubHtml += `<div class="pub-item"><div class="pub-title">${p.title}</div><div class="pub-authors">${p.authors}</div><div class="pub-journal">${p.journal} (${p.year})</div></div>`;
             });
             pubHtml += `<div style="margin-top:2rem;"><a href="https://scholar.google.com/citations?user=Ird_SeQAAAAJ&hl=en" target="_blank" class="btn-outline-lab">Full Google Scholar <i class="fas fa-arrow-right"></i></a></div>`;
@@ -468,7 +546,7 @@
         if (!container) return;
         let html = `<div class="admin-panel">`;
         if (tab === "publications") {
-            html += `<h3>Manage Publications</h3>
+            html += `<h3>Manage Publications (drag to reorder)</h3>
                 <form id="adminPubForm" class="admin-form">
                     <input type="text" id="pubYear" placeholder="Year" required>
                     <input type="text" id="pubTitle" placeholder="Title" required>
@@ -478,7 +556,7 @@
                 </form>
                 <div class="data-list" id="pubList"></div>`;
         } else if (tab === "members") {
-            html += `<h3>Manage Members</h3>
+            html += `<h3>Manage Members (drag to reorder)</h3>
                 <form id="adminMemberForm" class="admin-form">
                     <input type="text" id="memName" placeholder="Name" required>
                     <input type="text" id="memTitle" placeholder="Title" required>
@@ -488,7 +566,7 @@
                 </form>
                 <div class="data-list" id="memberList"></div>`;
         } else if (tab === "alumni") {
-            html += `<h3>Manage Alumni</h3>
+            html += `<h3>Manage Alumni (drag to reorder)</h3>
                 <form id="adminAlumniForm" class="admin-form">
                     <input type="text" id="alumName" placeholder="Name" required>
                     <input type="text" id="alumRole" placeholder="Role / Current position" required>
@@ -496,7 +574,7 @@
                 </form>
                 <div class="data-list" id="alumniList"></div>`;
         } else if (tab === "community") {
-            html += `<h3>Manage Community / News</h3>
+            html += `<h3>Manage Community / News (drag to reorder)</h3>
                 <form id="adminCommunityForm" class="admin-form">
                     <input type="text" id="commDate" placeholder="Date (YYYY-MM)" required>
                     <select id="commType">
@@ -509,7 +587,7 @@
                 </form>
                 <div class="data-list" id="communityList"></div>`;
         } else if (tab === "events") {
-            html += `<h3>Manage Events</h3>
+            html += `<h3>Manage Events (drag to reorder)</h3>
                 <form id="adminEventForm" class="admin-form">
                     <input type="text" id="eventDate" placeholder="Date (YYYY-MM-DD)" required>
                     <input type="text" id="eventTitle" placeholder="Title" required>
@@ -534,19 +612,24 @@
     function refreshAdminLists(tab) {
         if (tab === "publications") {
             const listDiv = document.getElementById("pubList");
-            if (listDiv) listDiv.innerHTML = db.publications.map((p,i)=>`<div class="data-item"><span><strong>${p.year}</strong> ${p.title}<br><small>${p.authors} — ${p.journal}</small></span><button class="delete-btn" onclick="deletePub(${i})">Delete</button></div>`).join("");
+            if (listDiv) listDiv.innerHTML = db.publications.map((p,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>${p.year}</strong> ${p.title}<br><small>${p.authors} — ${p.journal}</small></span><button class="delete-btn" onclick="deletePub(${i})">Delete</button></div>`).join("");
+            initDragSort('pubList', 'publications', () => refreshAdminLists('publications'));
         } else if (tab === "members") {
             const listDiv = document.getElementById("memberList");
-            if (listDiv) listDiv.innerHTML = db.members.map((m,i)=>`<div class="data-item"><span><strong>${m.name}</strong> (${m.title})<br><small>${m.bio.substring(0,80)}</small></span><button class="delete-btn" onclick="deleteMember(${i})">Delete</button></div>`).join("");
+            if (listDiv) listDiv.innerHTML = db.members.map((m,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>${m.name}</strong> (${m.title})<br><small>${m.bio.substring(0,80)}</small></span><button class="delete-btn" onclick="deleteMember(${i})">Delete</button></div>`).join("");
+            initDragSort('memberList', 'members', () => refreshAdminLists('members'));
         } else if (tab === "alumni") {
             const listDiv = document.getElementById("alumniList");
-            if (listDiv) listDiv.innerHTML = db.alumni.map((a,i)=>`<div class="data-item"><span><strong>${a.name}</strong> — ${a.role}</span><button class="delete-btn" onclick="deleteAlumni(${i})">Delete</button></div>`).join("");
+            if (listDiv) listDiv.innerHTML = db.alumni.map((a,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>${a.name}</strong> — ${a.role}</span><button class="delete-btn" onclick="deleteAlumni(${i})">Delete</button></div>`).join("");
+            initDragSort('alumniList', 'alumni', () => refreshAdminLists('alumni'));
         } else if (tab === "community") {
             const listDiv = document.getElementById("communityList");
-            if (listDiv) listDiv.innerHTML = db.community.map((c,i)=>`<div class="data-item"><span><strong>[${c.date}] ${c.type}</strong> ${c.content.substring(0,60)}</span><button class="delete-btn" onclick="deleteCommunity(${i})">Delete</button></div>`).join("");
+            if (listDiv) listDiv.innerHTML = db.community.map((c,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>[${c.date}] ${c.type}</strong> ${c.content.substring(0,60)}</span><button class="delete-btn" onclick="deleteCommunity(${i})">Delete</button></div>`).join("");
+            initDragSort('communityList', 'community', () => refreshAdminLists('community'));
         } else if (tab === "events") {
             const listDiv = document.getElementById("eventList");
-            if (listDiv) listDiv.innerHTML = db.events.map((e,i)=>`<div class="data-item"><span><strong>${e.date}</strong> ${e.title}<br><small>${e.location}</small></span><button class="delete-btn" onclick="deleteEvent(${i})">Delete</button></div>`).join("");
+            if (listDiv) listDiv.innerHTML = db.events.map((e,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>${e.date}</strong> ${e.title}<br><small>${e.location}</small></span><button class="delete-btn" onclick="deleteEvent(${i})">Delete</button></div>`).join("");
+            initDragSort('eventList', 'events', () => refreshAdminLists('events'));
         }
     }
     
@@ -595,7 +678,6 @@
             publicContainer.style.display = "none";
             adminContainer.classList.add("active");
             renderAdminTab(currentAdminTab);
-            // 更新 URL 为 /admin（但不触发路由）
             if (window.location.pathname !== "/admin") {
                 history.pushState(null, "", "/admin");
             }
@@ -606,7 +688,6 @@
             adminContainer.classList.remove("active");
             renderPublicPage(currentPage);
             updateNavActive(currentPage);
-            // 恢复 URL 到当前普通页面
             const targetPath = currentPage === "home" ? "/" : `/${currentPage}`;
             if (window.location.pathname !== targetPath) {
                 history.pushState(null, "", targetPath);
@@ -648,7 +729,6 @@
         };
     }
     
-    // 管理员入口函数（验证后进入）
     function enterAdmin() {
         if (isAdminMode) return;
         showAuthModal((success) => {
@@ -656,7 +736,6 @@
         });
     }
     
-    // 路由导航（普通页面）
     function navigateTo(path, push = true) {
         let page = path === "/" ? "home" : path.slice(1);
         const validPages = ["home","research","publications","members","alumni","community","events","contact"];
@@ -683,7 +762,7 @@
         });
     }
     
-    // 键盘快捷键 Ctrl+Shift+A 触发管理员入口
+    // 键盘快捷键 Ctrl+Shift+A
     document.addEventListener("keydown", (e) => {
         if (e.ctrlKey && e.shiftKey && e.key === "A") {
             e.preventDefault();
@@ -691,7 +770,6 @@
         }
     });
     
-    // 事件绑定
     document.getElementById("homeLink").addEventListener("click", (e) => {
         e.preventDefault();
         navigateTo("/");
@@ -721,7 +799,6 @@
         });
     });
     
-    // 语言切换
     function setLanguage(lang) {
         currentLang = lang;
         if (!isAdminMode) renderPublicPage(currentPage);
@@ -731,23 +808,19 @@
     document.getElementById("langEnFooter").addEventListener("click", () => setLanguage("en"));
     document.getElementById("langFrFooter").addEventListener("click", () => setLanguage("fr"));
     
-    // 初始化路由：根据当前路径决定显示
     function handleInitialRoute() {
         const path = window.location.pathname;
         if (path === "/admin") {
-            // 直接访问 /admin，触发管理员验证
             enterAdmin();
         } else {
             navigateTo(path, false);
         }
     }
     
-    // 监听 popstate（浏览器前进后退）
     window.addEventListener("popstate", () => {
         const path = window.location.pathname;
         if (path === "/admin") {
             if (!isAdminMode) enterAdmin();
-            // 如果已经处于 admin 模式，什么都不做
         } else {
             if (isAdminMode) setAdminMode(false);
             navigateTo(path, false);
