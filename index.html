@@ -2,561 +2,747 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Chen Liang Lab · AI‑Driven Virology | Recruiting Cross‑Disciplinary Researchers</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liang Lab · McGill University</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         :root {
             --blue-deep: #0072BB;
             --blue-bright: #1E91D6;
             --green-accent: #8FC93A;
             --gold-accent: #E4CC37;
             --orange-accent: #E18335;
-            --dark-bg: #0A1A2F;
-            --light-bg: #F5F9FF;
-            --card-bg: rgba(255, 255, 255, 0.95);
-            --text-dark: #0B2B44;
-            --text-muted: #2C4A6E;
-            --border-light: #E2EEF9;
-            --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 20px 35px -10px rgba(0, 114, 187, 0.15);
+            --bg-white: #FFFFFF;
+            --text-dark: #111111;
+            --text-muted: #2c3e3f;
+            --border-light: #eaeef2;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.03), 0 2px 6px rgba(0,0,0,0.02);
+            --shadow-md: 0 8px 20px rgba(0,0,0,0.03), 0 2px 4px rgba(0,0,0,0.02);
         }
-
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 100%);
+            background: var(--bg-white);
             color: var(--text-dark);
-            scroll-behavior: smooth;
             line-height: 1.5;
+            scroll-behavior: smooth;
         }
-
-        .container { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
-
-        /* Navigation */
-        .navbar {
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+        .site-header {
             background: linear-gradient(135deg, var(--blue-deep) 0%, var(--blue-bright) 100%);
-            backdrop-filter: blur(4px);
             position: sticky;
             top: 0;
             z-index: 100;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 0.9rem 0;
-            box-shadow: 0 4px 20px rgba(0, 114, 187, 0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
-        .nav-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .logo h2 {
-            font-weight: 800;
-            font-size: 1.6rem;
-            background: linear-gradient(135deg, #fff, var(--gold-accent));
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-        .logo span { color: var(--gold-accent); font-weight: 800; }
-        .nav-links { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
-        .nav-links a { color: rgba(255, 255, 255, 0.9); text-decoration: none; font-weight: 500; transition: 0.2s; }
-        .nav-links a:hover { color: var(--gold-accent); transform: translateY(-1px); }
-        .lang-switch {
+        .header-container {
             display: flex;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 4px 12px;
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            padding: 1rem 0 0.8rem 0;
         }
-        .lang-switch button {
-            background: none;
+        .lab-title a {
+            text-decoration: none;
+            display: inline-block;
+        }
+        .lab-title h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: white;
+            transition: opacity 0.2s;
+        }
+        .lab-title h1:hover { opacity: 0.85; }
+        .lab-title p { font-size: 0.85rem; color: rgba(255,255,255,0.85); margin-top: 4px; }
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            list-style: none;
+            align-items: center;
+        }
+        .nav-links li a {
+            text-decoration: none;
+            font-weight: 500;
+            color: white;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            padding-bottom: 4px;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-links li a:hover, .nav-links li a.active {
+            border-bottom-color: var(--gold-accent);
+            color: var(--gold-accent);
+        }
+        /* 管理导航栏：平时隐藏，admin模式时显示，占顶部区域2/3宽度且靠右 */
+        .admin-nav-bar {
+            display: none;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            width: 66.666%;
+            justify-content: flex-end;
+            margin-left: auto;
+        }
+        /* 缩小管理选项卡的尺寸（大小缩小一半） */
+        .admin-nav-bar a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.2rem 0.4rem;      /* 原0.4rem 0.8rem，缩小一半 */
+            font-size: 0.8rem;           /* 明确缩小字体 */
+            border-radius: 40px;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .admin-nav-bar a:hover, .admin-nav-bar a.active {
+            background: rgba(255,255,255,0.2);
+            color: var(--gold-accent);
+        }
+        .exit-admin {
+            background: rgba(0,0,0,0.2);
+            border-radius: 40px;
+            padding: 0.2rem 0.6rem;      /* 相应缩小 */
+        }
+        .exit-admin:hover {
+            background: var(--orange-accent);
+            color: white !important;
+        }
+        .page-content { min-height: 65vh; padding: 3rem 0 4rem; }
+        
+        /* 普通视图样式 */
+        .members-grid, .alumni-grid, .events-grid, .community-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+        .member-card, .alumni-card, .event-card, .community-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-light);
+            transition: 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+        .member-card:hover, .alumni-card:hover, .event-card:hover, .community-card:hover {
+            border-color: var(--blue-bright);
+            box-shadow: 0 12px 24px -12px rgba(0,114,187,0.12);
+        }
+        .member-name, .event-title, .community-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--blue-deep);
+        }
+        .member-title, .event-date, .community-date {
+            color: var(--orange-accent);
+            font-weight: 500;
+            font-size: 0.85rem;
+            margin: 0.25rem 0 0.5rem;
+        }
+        .member-photo {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 12px;
+            border: 2px solid var(--gold-accent);
+        }
+        .pub-item { border-bottom: 1px solid var(--border-light); padding: 1rem 0; }
+        .pub-title { font-weight: 700; }
+        .pub-authors, .pub-journal { font-size: 0.85rem; color: var(--text-muted); }
+        .btn-outline-lab {
+            border: 1.5px solid var(--blue-bright);
+            background: transparent;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            display: inline-block;
+            color: var(--blue-bright);
+            text-decoration: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .btn-outline-lab:hover { background: var(--blue-bright); color: white; }
+        .admin-btn {
+            background: var(--gold-accent);
+            color: var(--blue-deep);
             border: none;
-            color: rgba(255, 255, 255, 0.8);
+            padding: 6px 16px;
+            border-radius: 40px;
             font-weight: 600;
             cursor: pointer;
-            font-size: 0.9rem;
-            padding: 4px 10px;
-            border-radius: 30px;
-            transition: 0.2s;
-        }
-        .lang-switch button.active { background: var(--gold-accent); color: var(--blue-deep); }
-
-        /* Hero */
-        .hero {
-            padding: 80px 0 60px;
-            background: linear-gradient(125deg, rgba(30, 145, 214, 0.05) 0%, rgba(143, 201, 58, 0.03) 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(30, 145, 214, 0.1) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .hero-grid { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
-        .hero-text { flex: 2; min-width: 260px; }
-        .hero-badge {
-            background: linear-gradient(95deg, var(--green-accent), var(--gold-accent));
-            color: var(--blue-deep);
-            display: inline-block;
-            padding: 6px 20px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(143, 201, 58, 0.3);
-        }
-        .hero h1 {
-            font-size: 3rem;
-            font-weight: 800;
-            line-height: 1.2;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, var(--blue-deep), var(--blue-bright), var(--orange-accent));
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-        .hero p { font-size: 1.2rem; color: var(--text-muted); max-width: 90%; margin-bottom: 32px; }
-        .btn-group { display: flex; gap: 18px; flex-wrap: wrap; }
-        .btn-primary {
-            background: linear-gradient(95deg, var(--blue-deep), var(--blue-bright));
-            color: white;
-            padding: 12px 32px;
-            border-radius: 40px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(0, 114, 187, 0.3);
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(30, 145, 214, 0.4); background: linear-gradient(95deg, var(--blue-bright), var(--blue-deep)); }
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--blue-bright);
-            color: var(--blue-bright);
-            padding: 12px 28px;
-            border-radius: 40px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-outline:hover { background: rgba(30, 145, 214, 0.1); border-color: var(--green-accent); color: var(--green-accent); transform: translateY(-2px); }
-        .hero-stats {
-            flex: 1;
-            background: var(--card-bg);
-            backdrop-filter: blur(8px);
-            border-radius: 32px;
-            padding: 32px 24px;
-            box-shadow: var(--shadow-md);
-            border: 1px solid rgba(30, 145, 214, 0.2);
-        }
-        .stat-item { margin-bottom: 24px; border-bottom: 1px dashed rgba(0, 114, 187, 0.2); padding-bottom: 16px; }
-        .stat-item:last-child { border-bottom: none; }
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--blue-bright), var(--orange-accent));
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-
-        /* Sections */
-        section { padding: 70px 0; border-bottom: 1px solid var(--border-light); }
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 40px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .section-title i {
-            background: linear-gradient(135deg, var(--blue-bright), var(--green-accent));
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            font-size: 2rem;
-        }
-
-        /* Cards grid - 通用卡片网格（教育、实验室等保持自适应） */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 28px;
-        }
-
-        /* 专门为 research section 强制 2x2 布局 */
-        .research-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 28px;
-        }
-
-        @media (max-width: 768px) {
-            .research-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .research-card, .lab-card {
-            background: var(--card-bg);
-            border-radius: 28px;
-            padding: 28px;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(30, 145, 214, 0.15);
-            box-shadow: var(--shadow-sm);
-        }
-        .research-card:hover, .lab-card:hover {
-            transform: translateY(-6px);
-            box-shadow: var(--shadow-md);
-            border-color: var(--blue-bright);
-        }
-        .research-card i, .lab-card i {
-            font-size: 2.2rem;
-            background: linear-gradient(135deg, var(--blue-bright), var(--green-accent));
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            margin-bottom: 20px;
-        }
-        .research-card h3, .lab-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 12px;
-            font-weight: 700;
-            color: var(--blue-deep);
-        }
-        .badge-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-        .badge {
-            background: linear-gradient(95deg, rgba(30, 145, 214, 0.1), rgba(143, 201, 58, 0.1));
-            padding: 4px 14px;
-            border-radius: 30px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--blue-deep);
-            border: 1px solid rgba(30, 145, 214, 0.3);
-        }
-        .publication-list { list-style: none; margin-top: 16px; }
-        .publication-list li { margin-bottom: 12px; font-size: 0.9rem; border-left: 3px solid var(--green-accent); padding-left: 16px; color: var(--text-muted); }
-        .contact-block {
-            background: linear-gradient(135deg, #FFFFFF, rgba(30, 145, 214, 0.03));
-            border-radius: 32px;
-            padding: 40px;
-            text-align: center;
-            border: 1px solid rgba(30, 145, 214, 0.2);
-            box-shadow: var(--shadow-sm);
-        }
-        .cross-disciplinary {
-            background: linear-gradient(110deg, rgba(30, 145, 214, 0.05), rgba(143, 201, 58, 0.03));
-            border-radius: 32px;
-            padding: 28px;
-            margin-top: 20px;
-            border: 1px solid rgba(30, 145, 214, 0.2);
         }
         footer {
-            background: linear-gradient(135deg, var(--blue-deep), #0A2A44);
-            color: #CDE5F5;
-            padding: 32px 0;
+            background: linear-gradient(135deg, var(--blue-deep), var(--blue-bright));
+            color: white;
+            padding: 2rem 0;
             text-align: center;
-            font-size: 0.85rem;
+            position: relative;
+        }
+        .lang-footer {
+            position: absolute;
+            bottom: 1rem;
+            right: 2rem;
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.7rem;
+        }
+        .lang-footer button {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.8);
+            font-weight: 500;
+            cursor: pointer;
+            padding: 2px 6px;
+            transition: 0.2s;
+            font-size: 0.7rem;
+        }
+        .lang-footer button.active {
+            color: var(--gold-accent);
+            font-weight: 600;
+        }
+        .lang-footer button:hover { color: white; }
+        .section-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.2rem; border-left: 5px solid var(--orange-accent); padding-left: 1rem; }
+        .hero-image { background:#f2f6fc; border-radius:32px; min-height:300px; display:flex; align-items:center; justify-content:center; margin-bottom:2rem; border:1px solid var(--border-light); }
+        .lab-quote { background:#F9FBFD; border-left:6px solid var(--green-accent); padding:1.8rem; border-radius:24px; margin:1.5rem 0; }
+        .feature-box { display:flex; gap:2rem; flex-wrap:wrap; margin-top:2rem; }
+        .feature { flex:1; background:white; border-radius:24px; padding:1.5rem; border:1px solid var(--border-light); }
+        .research-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap:1.5rem; margin-top:1.5rem; }
+        .research-card { background:#F9FBFD; border-radius:24px; padding:1.5rem; border:1px solid var(--border-light); }
+        .contact-info { background:#F9FBFD; border-radius:28px; padding:2rem; }
+        
+        /* 管理视图样式 */
+        .admin-view-container {
+            display: none;
+        }
+        .admin-view-container.active {
+            display: block;
+        }
+        .admin-panel {
+            background: #f9fbfd;
+            border-radius: 28px;
+            padding: 2rem;
+            border: 1px solid var(--border-light);
+        }
+        .admin-form input, .admin-form textarea, .admin-form select {
+            width: 100%;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+        }
+        .data-list {
+            margin-top: 2rem;
+        }
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #e18335;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 28px;
+            max-width: 400px;
+            width: 90%;
         }
         @media (max-width: 780px) {
-            .hero h1 { font-size: 2.2rem; }
-            .nav-links { gap: 18px; margin-top: 12px; width: 100%; justify-content: center; }
-            .logo h2 { font-size: 1.3rem; }
-            .section-title { font-size: 1.7rem; }
+            .header-container { flex-direction: column; gap: 1rem; }
+            .nav-links, .admin-nav-bar { justify-content: center; width: 100%; margin-left: 0; }
+            .lang-footer { position: static; margin-top: 1rem; justify-content: center; }
         }
-        a { transition: all 0.2s; }
     </style>
 </head>
 <body>
 
-<nav class="navbar">
-    <div class="container nav-flex">
-        <div class="logo"><h2>Liang<span>Lab</span> <span style="font-size:0.9rem; background: none; color: var(--gold-accent);">· AI x Virology</span></h2></div>
-        <div class="nav-links">
-            <a href="#home" data-i18n="nav_home">Home</a>
-            <a href="#research" data-i18n="nav_research">Research</a>
-            <a href="#lab" data-i18n="nav_lab">Lab</a>
-            <a href="#join" data-i18n="nav_join">Join us</a>
-            <a href="#contact" data-i18n="nav_contact">Contact</a>
-            <div class="lang-switch">
-                <button id="langEn" class="active">EN</button>
-                <button id="langFr">FR</button>
-            </div>
+<header class="site-header">
+    <div class="container header-container">
+        <div class="lab-title">
+            <a href="#" id="homeLink">
+                <h1>Liang Lab <span style="font-size:1rem;">· Viral Pathogenesis & AI</span></h1>
+                <p>McGill University · Lady Davis Institute</p>
+            </a>
+        </div>
+        <!-- 普通导航栏（已移除 Admin 按钮） -->
+        <ul class="nav-links" id="publicNav">
+            <li><a href="#" data-page="research">Research</a></li>
+            <li><a href="#" data-page="publications">Publications</a></li>
+            <li><a href="#" data-page="members">Lab Members</a></li>
+            <li><a href="#" data-page="alumni">Alumni</a></li>
+            <li><a href="#" data-page="community">Community</a></li>
+            <li><a href="#" data-page="events">Events</a></li>
+            <li><a href="#" data-page="contact">Contact</a></li>
+            <!-- Admin 入口已隐藏，仅通过 /#admin 访问 -->
+        </ul>
+        <!-- 管理导航栏（admin模式显示，尺寸已缩小） -->
+        <div class="admin-nav-bar" id="adminNavBar">
+            <a href="#" data-admin-tab="publications">Manage Publications</a>
+            <a href="#" data-admin-tab="members">Manage Members</a>
+            <a href="#" data-admin-tab="alumni">Manage Alumni</a>
+            <a href="#" data-admin-tab="community">Manage Community</a>
+            <a href="#" data-admin-tab="events">Manage Events</a>
+            <a href="#" id="exitAdminBtn" class="exit-admin">Exit Admin</a>
         </div>
     </div>
-</nav>
+</header>
 
-<!-- Hero section -->
-<section id="home" class="hero">
-    <div class="container hero-grid">
-        <div class="hero-text">
-            <div class="hero-badge" data-i18n="hero_badge">⚡ AI‑powered virology · Recruiting cross‑disciplinary minds</div>
-            <h1><span data-i18n="hero_title1">Chen Liang Lab</span><br><span data-i18n="hero_title2">Virus‑Host Intelligence · HIV Cure · Pandemic Readiness</span></h1>
-            <p data-i18n="hero_desc">We fuse molecular virology, CRISPR screens, and generative AI to decode viral pathogenesis. Join us at the frontier where computation meets biology.</p>
-            <div class="btn-group">
-                <a href="#join" class="btn-primary"><i class="fas fa-robot"></i> <span data-i18n="hero_btn_join">Join the lab</span></a>
-                <a href="#research" class="btn-outline"><i class="fas fa-flask"></i> <span data-i18n="hero_btn_research">Explore science</span></a>
-            </div>
-        </div>
-        <div class="hero-stats">
-            <div class="stat-item"><div class="stat-number">CRISPR pioneer</div><div data-i18n="stat1">HIV‑1 cure research</div></div>
-            <div class="stat-item"><div class="stat-number">50+</div><div data-i18n="stat2">peer‑reviewed papers</div></div>
-            <div class="stat-item"><div class="stat-number">CIHR · FRQ · CANFAR</div><div data-i18n="stat3">continuous funding</div></div>
-            <div class="stat-item"><div class="stat-number">AI‑ready</div><div data-i18n="stat4">proteomics + genomic data science</div></div>
-        </div>
+<main class="page-content">
+    <!-- 普通视图容器 -->
+    <div class="container" id="public-container"></div>
+    
+    <!-- 管理视图容器 -->
+    <div class="container admin-view-container" id="admin-container">
+        <div id="admin-content"></div>
     </div>
-</section>
-
-<!-- Professor & Affiliation -->
-<section style="background: var(--light-bg);">
-    <div class="container">
-        <div class="section-title"><i class="fas fa-user-graduate"></i> <span data-i18n="about_title">Principal Investigator</span></div>
-        <div class="card-grid">
-            <div class="lab-card">
-                <i class="fas fa-chalkboard-user"></i>
-                <h3 data-i18n="pi_name">Dr. Chen Liang, PhD</h3>
-                <p data-i18n="pi_title">Professor, Department of Medicine, McGill University<br>Senior Investigator, Lady Davis Institute<br>Director, McGill Centre for Viral Diseases</p>
-                <div class="badge-list">
-                    <span class="badge">HIV-1 restriction factors</span>
-                    <span class="badge">CRISPR gene editing</span>
-                    <span class="badge">SARS-CoV-2 immunity</span>
-                    <span class="badge">IFITM / MxB</span>
-                </div>
-            </div>
-            <div class="lab-card">
-                <i class="fas fa-microscope"></i>
-                <h3 data-i18n="aff_title">Affiliation & leadership</h3>
-                <p data-i18n="aff_text">McGill University – Division of Infectious Diseases & Microbiology; Lady Davis Institute (Jewish General Hospital); Director of McGill Centre for Viral Diseases; pioneer in applying CRISPR toward HIV-1 eradication.</p>
-                <p><i class="fas fa-trophy" style="color: var(--orange-accent);"></i> <span data-i18n="funding">CIHR, FRQS, CANFAR, NIH partnerships</span></p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Research Directions -->
-<section id="research">
-    <div class="container">
-        <div class="section-title"><i class="fas fa-dna"></i> <span data-i18n="research_title">Research frontiers: from molecular locks to AI‑driven discovery</span></div>
-        <div class="research-grid">
-            <div class="research-card">
-                <i class="fas fa-virus-covid"></i>
-                <h3 data-i18n="r1_title">HIV-1 & host restriction</h3>
-                <p data-i18n="r1_desc">Deciphering how IFITM proteins, MxB, APOBEC3G, and tetherin block HIV-1 at entry, reverse transcription, and release. Using proteomic screens to uncover novel restriction factors.</p>
-            </div>
-            <div class="research-card">
-                <i class="fas fa-scissors"></i>
-                <h3 data-i18n="r2_title">CRISPR‑based HIV cure</h3>
-                <p data-i18n="r2_desc">Pioneered application of CRISPR-Cas9 to excise integrated HIV-1 provirus from infected cells. Current work: precision delivery, escape mutations & combination with latency reversal.</p>
-            </div>
-            <div class="research-card">
-                <i class="fas fa-lungs"></i>
-                <h3 data-i18n="r3_title">SARS-CoV-2 & interferon dysregulation</h3>
-                <p data-i18n="r3_desc">Understanding aberrant innate immune responses in severe COVID-19; discovering small molecules that inhibit coronavirus replication (e.g., anthracyclines).</p>
-            </div>
-            <div class="research-card">
-                <i class="fas fa-chart-line"></i>
-                <h3 data-i18n="r4_title">AI + multi‑omics integration</h3>
-                <p data-i18n="r4_desc">Applying machine learning to genomic/proteomic datasets to predict viral‑host interactions, accelerate drug repurposing, and design RNA‑targeting molecules.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Lab philosophy & AI/cross-disciplinary focus -->
-<section id="lab" style="background: #FFFFFF;">
-    <div class="container">
-        <div class="section-title"><i class="fas fa-brain"></i> <span data-i18n="lab_title">Why Liang Lab in the AI era?</span></div>
-        <div class="cross-disciplinary">
-            <div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: center;">
-                <div style="flex: 2;">
-                    <h3 style="font-size: 1.7rem; margin-bottom: 16px; background: linear-gradient(135deg, var(--blue-bright), var(--green-accent)); background-clip: text; -webkit-background-clip: text; color: transparent;" data-i18n="ai_vision">🤖 AI‑augmented virology</h3>
-                    <p data-i18n="ai_text1">We combine high‑throughput CRISPR screens, single‑cell transcriptomics, and structural biology with generative AI models to predict viral escape and design novel antivirals. The lab is actively building <strong style="color: var(--orange-accent);">AI agents</strong> that mine viral evolution data and propose experimental hypotheses.</p>
-                    <p data-i18n="ai_text2" style="margin-top: 16px;">We are seeking computational biologists, machine learning engineers, and physicists who are eager to tackle pandemic threats. Cross‑disciplinary training is at our core — wet lab and dry lab work side by side.</p>
-                    <div class="badge-list mt-3">
-                        <span class="badge">🧠 Machine learning</span>
-                        <span class="badge">📊 Single‑cell RNAseq</span>
-                        <span class="badge">🧬 Protein structure prediction</span>
-                        <span class="badge">⚙️ CRISPR screening</span>
-                    </div>
-                </div>
-                <div style="flex: 1; background: linear-gradient(135deg, #FFFFFF, rgba(30, 145, 214, 0.05)); border-radius: 28px; padding: 24px; text-align: center; box-shadow: var(--shadow-sm); border: 1px solid rgba(30, 145, 214, 0.2);">
-                    <i class="fas fa-handshake" style="font-size: 3rem; color: var(--green-accent);"></i>
-                    <h4 data-i18n="open_role" style="margin: 16px 0 8px; color: var(--blue-deep);">📢 Open positions</h4>
-                    <p data-i18n="open_text">Postdoctoral fellows • PhD/MSc students • AI/ML research software engineers • Visiting scholars with computational background</p>
-                    <a href="#join" class="btn-primary" style="display: inline-block; margin-top: 12px; padding: 8px 20px; font-size: 0.9rem;"><span data-i18n="open_btn">Express interest</span> →</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Selected publications -->
-<section id="publications" style="background: var(--light-bg);">
-    <div class="container">
-        <div class="section-title"><i class="fas fa-book-open"></i> <span data-i18n="pubs_title">Selected publications (AI & virology frontier)</span></div>
-        <div class="card-grid">
-            <div class="research-card">
-                <i class="fas fa-dna"></i>
-                <ul class="publication-list">
-                    <li>Wang Z et al., <strong>Anthracyclines inhibit SARS-CoV-2 infection</strong>. Virus Res, 2023.</li>
-                    <li>Liu Z et al., <strong>The interferon-inducible MxB protein inhibits HIV-1 infection</strong>. Cell Host Microbe, 2013.</li>
-                    <li>Wang Z et al., <strong>CRISPR/Cas9-Derived Mutations Both Inhibit HIV-1 Replication and Accelerate Viral Escape</strong>. Cell Reports, 2016.</li>
-                    <li>Beitari S et al., <strong>Differential pressures of SERINC5 and IFITM3 on HIV-1 envelope</strong>. J Virol, 2020.</li>
-                </ul>
-                <div class="badge-list"><span class="badge">Google Scholar: 10k+ citations</span></div>
-            </div>
-            <div class="research-card">
-                <i class="fas fa-chart-simple"></i>
-                <h3 data-i18n="ai_collab">AI/ML in the lab</h3>
-                <p data-i18n="ai_collab_text">Current projects integrate protein language models (ESM-2) to predict IFN‑induced antiviral interfaces; deep learning for CRISPR gRNA escape prediction; and generative modeling for novel RNA-binding molecules.</p>
-                <p><i class="fas fa-code"></i> <span data-i18n="tools">Python, PyTorch, scRNA-seq pipelines, biopython</span></p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Join section -->
-<section id="join">
-    <div class="container">
-        <div class="section-title"><i class="fas fa-users"></i> <span data-i18n="join_title">Join us — shape the future of antiviral AI</span></div>
-        <div class="contact-block">
-            <i class="fas fa-flask" style="font-size: 3rem; color: var(--green-accent); margin-bottom: 20px;"></i>
-            <h3 data-i18n="join_interest" style="color: var(--blue-deep);">Are you a computational biologist, AI researcher, or virologist with coding superpowers?</h3>
-            <p style="max-width: 700px; margin: 16px auto;" data-i18n="join_desc">We offer a collaborative environment at McGill University (Montréal), access to state‑of‑the‑art BSL3/BSL2+ facilities, cutting‑edge compute clusters, and mentorship to bridge wet‑lab biology with artificial intelligence. <strong style="color: var(--orange-accent);">We highly encourage applicants with background in machine learning, data science, or physics to apply — no prior virology experience required, only curiosity.</strong></p>
-            <div class="btn-group" style="justify-content: center; margin-top: 20px;">
-                <a href="mailto:chen.liang@mcgill.ca?subject=Interest in Liang Lab (AI/Cross-disciplinary)" class="btn-primary"><i class="fas fa-paper-plane"></i> <span data-i18n="join_email">Email Dr. Liang</span></a>
-                <a href="#contact" class="btn-outline"><i class="fas fa-comments"></i> <span data-i18n="join_contact">Contact coordinator</span></a>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Contact -->
-<section id="contact" style="background: var(--light-bg);">
-    <div class="container">
-        <div class="section-title"><i class="fas fa-map-marker-alt"></i> <span data-i18n="contact_title">Get in touch</span></div>
-        <div class="card-grid">
-            <div class="lab-card">
-                <i class="fas fa-building"></i>
-                <h3>Lady Davis Institute / McGill University</h3>
-                <p>3755 Côte-Sainte-Catherine Road, Montréal, QC H3T 1E2, Canada</p>
-                <p><i class="fas fa-phone-alt"></i> +1 (514) 340-8222 ext. 24826</p>
-                <p><i class="fas fa-envelope"></i> chen.liang@mcgill.ca</p>
-            </div>
-            <div class="lab-card">
-                <i class="fab fa-google-scholar"></i>
-                <h3 data-i18n="scholar">Google Scholar & profiles</h3>
-                <p><a href="https://scholar.google.com/citations?user=Ird_SeQAAAAJ&hl=en" target="_blank" style="color: var(--blue-bright); font-weight: 500;">Chen Liang - Google Scholar</a><br>
-                <a href="https://www.mcgill.ca/global-public-health/chen-liang" target="_blank" style="color: var(--blue-bright);">McGill Global Public Health</a><br>
-                <a href="https://www.ladydavis.ca/en/researcher/chen-liang/" target="_blank" style="color: var(--blue-bright);">Lady Davis Institute</a></p>
-                <p data-i18n="follow_lab">🔬 Follow lab news: AI x virology seminars, joint events with Mila & computational biology units.</p>
-            </div>
-        </div>
-    </div>
-</section>
+</main>
 
 <footer>
     <div class="container">
-        <p data-i18n="footer_text">© 2026 Chen Liang Lab, McGill University — Recruiting cross‑disciplinary minds. Open science, inclusive environment.</p>
-        <p style="margin-top: 12px; font-size: 0.8rem;">📍 Montreal, Canada | Bilingual research environment (EN/FR) | <span style="color: var(--gold-accent);">AI x Virology</span></p>
+        <p>© 2026 Chen Liang Lab · McGill University | <span style="color: var(--gold-accent);">HIV Cure · Innate Immunity · AI Virology</span></p>
+    </div>
+    <div class="lang-footer">
+        <button id="langEnFooter" class="active">EN</button>
+        <button id="langFrFooter">FR</button>
     </div>
 </footer>
 
 <script>
-    const translations = {
+    // ==================== 数据模型 (localStorage) ====================
+    let db = {
+        publications: [
+            { year: 2023, title: "Anthracyclines inhibit SARS-CoV-2 infection", authors: "Wang Z, Pan Q, Ma L, et al.", journal: "Virus Research" },
+            { year: 2016, title: "CRISPR/Cas9-Derived Mutations Both Inhibit HIV-1 Replication and Accelerate Viral Escape", authors: "Wang Z, Pan Q, Gendron P, et al.", journal: "Cell Reports" },
+            { year: 2013, title: "The interferon-inducible MxB protein inhibits HIV-1 infection", authors: "Liu Z, Pan Q, Ding S, et al.", journal: "Cell Host & Microbe" },
+            { year: 2020, title: "Differential pressures of SERINC5 and IFITM3 on HIV-1 envelope", authors: "Beitari S, Pan Q, Finzi A, Liang C.", journal: "J Virol" }
+        ],
+        members: [
+            { name: "Chen Liang, PhD", title: "Principal Investigator", bio: "Professor, McGill University; Director, McGill Centre for Viral Diseases.", photo: "" },
+            { name: "Qinghua Pan, PhD", title: "Research Associate", bio: "CRISPR screening, HIV latency, animal models.", photo: "" },
+            { name: "Zeyu Wang, PhD", title: "Postdoctoral Fellow", bio: "Antiviral innate immunity, SARS-CoV-2.", photo: "" },
+            { name: "Sina Beitari, PhD", title: "Postdoctoral Fellow", bio: "HIV-1 envelope evolution, viral escape.", photo: "" },
+            { name: "Marie-Claude Bourgeois", title: "PhD Candidate", bio: "Machine learning for virus-host interactions.", photo: "" },
+            { name: "Jessica Zhao", title: "MSc Student", bio: "CRISPR delivery, deep mutational scanning.", photo: "" }
+        ],
+        alumni: [
+            { name: "Dr. Fengwen Xu", role: "Former Postdoc — now PI at Wuhan Institute of Virology" },
+            { name: "Dr. Shuo Ding", role: "Former PhD — Senior Scientist, Biotech industry" },
+            { name: "Dr. Lijuan Ma", role: "Former Research Associate — Assistant Professor, China" },
+            { name: "Dr. Jing Qian", role: "Former Postdoc — Principal Scientist, Oncology R&D" }
+        ],
+        community: [
+            { date: "2025-04", type: "news", content: "McGill Reporter: “CRISPR cure for HIV — Liang Lab moves toward clinical proof-of-concept.”", link: "" },
+            { date: "2024-12", type: "news", content: "CIHR Highlight: Liang Lab receives $2.1M for AI-driven antiviral discovery.", link: "" },
+            { date: "2023-09", type: "video", content: "Nature Podcast interview on interferon antagonism.", link: "https://youtu.be/example" }
+        ],
+        events: [
+            { date: "2026-05-15", title: "International Symposium on Viral Pathogenesis", description: "Keynote by Dr. Liang.", location: "Montreal, Canada", photo: "" },
+            { date: "2026-09-10", title: "CRISPR & HIV Cure Workshop", description: "Hands-on training", location: "McGill University", photo: "" }
+        ]
+    };
+
+    function loadData() { const saved = localStorage.getItem("lianglab_db"); if (saved) db = JSON.parse(saved); else saveData(); }
+    function saveData() { localStorage.setItem("lianglab_db", JSON.stringify(db)); }
+
+    // 双语资源
+    const strings = {
         en: {
-            nav_home: "Home", nav_research: "Research", nav_lab: "Lab", nav_join: "Join us", nav_contact: "Contact",
-            hero_badge: "⚡ AI‑powered virology · Recruiting cross‑disciplinary minds",
-            hero_title1: "Chen Liang Lab",
-            hero_title2: "Virus‑Host Intelligence · HIV Cure · Pandemic Readiness",
-            hero_desc: "We fuse molecular virology, CRISPR screens, and generative AI to decode viral pathogenesis. Join us at the frontier where computation meets biology.",
-            hero_btn_join: "Join the lab", hero_btn_research: "Explore science",
-            stat1: "HIV‑1 cure research", stat2: "peer‑reviewed papers", stat3: "continuous funding", stat4: "proteomics + genomic data science",
-            about_title: "Principal Investigator",
-            pi_name: "Dr. Chen Liang, PhD", pi_title: "Professor, Department of Medicine, McGill University\nSenior Investigator, Lady Davis Institute\nDirector, McGill Centre for Viral Diseases",
-            aff_title: "Affiliation & leadership", aff_text: "McGill University – Division of Infectious Diseases & Microbiology; Lady Davis Institute (Jewish General Hospital); Director of McGill Centre for Viral Diseases; pioneer in applying CRISPR toward HIV-1 eradication.",
-            funding: "CIHR, FRQS, CANFAR, NIH partnerships",
-            research_title: "Research frontiers: from molecular locks to AI‑driven discovery",
-            r1_title: "HIV-1 & host restriction", r1_desc: "Deciphering how IFITM proteins, MxB, APOBEC3G, and tetherin block HIV-1 at entry, reverse transcription, and release. Using proteomic screens to uncover novel restriction factors.",
-            r2_title: "CRISPR‑based HIV cure", r2_desc: "Pioneered application of CRISPR-Cas9 to excise integrated HIV-1 provirus from infected cells. Current work: precision delivery, escape mutations & combination with latency reversal.",
-            r3_title: "SARS-CoV-2 & interferon dysregulation", r3_desc: "Understanding aberrant innate immune responses in severe COVID-19; discovering small molecules that inhibit coronavirus replication (e.g., anthracyclines).",
-            r4_title: "AI + multi‑omics integration", r4_desc: "Applying machine learning to genomic/proteomic datasets to predict viral‑host interactions, accelerate drug repurposing, and design RNA‑targeting molecules.",
-            lab_title: "Why Liang Lab in the AI era?",
-            ai_vision: "🤖 AI‑augmented virology",
-            ai_text1: "We combine high‑throughput CRISPR screens, single‑cell transcriptomics, and structural biology with generative AI models to predict viral escape and design novel antivirals. The lab is actively building AI agents that mine viral evolution data and propose experimental hypotheses.",
-            ai_text2: "We are seeking computational biologists, machine learning engineers, and physicists who are eager to tackle pandemic threats. Cross‑disciplinary training is at our core — wet lab and dry lab work side by side.",
-            open_role: "📢 Open positions", open_text: "Postdoctoral fellows • PhD/MSc students • AI/ML research software engineers • Visiting scholars with computational background", open_btn: "Express interest",
-            pubs_title: "Selected publications (AI & virology frontier)",
-            ai_collab: "AI/ML in the lab", ai_collab_text: "Current projects integrate protein language models (ESM-2) to predict IFN‑induced antiviral interfaces; deep learning for CRISPR gRNA escape prediction; and generative modeling for novel RNA-binding molecules.",
-            tools: "Python, PyTorch, scRNA-seq pipelines, biopython",
-            join_title: "Join us — shape the future of antiviral AI",
-            join_interest: "Are you a computational biologist, AI researcher, or virologist with coding superpowers?",
-            join_desc: "We offer a collaborative environment at McGill University (Montréal), access to state‑of‑the‑art BSL3/BSL2+ facilities, cutting‑edge compute clusters, and mentorship to bridge wet‑lab biology with artificial intelligence. We highly encourage applicants with background in machine learning, data science, or physics to apply — no prior virology experience required, only curiosity.",
-            join_email: "Email Dr. Liang", join_contact: "Contact coordinator",
-            contact_title: "Get in touch", scholar: "Google Scholar & profiles", follow_lab: "🔬 Follow lab news: AI x virology seminars, joint events with Mila & computational biology units.",
-            footer_text: "© 2026 Chen Liang Lab, McGill University — Recruiting cross‑disciplinary minds. Open science, inclusive environment."
+            home_title: "Chen Liang Lab",
+            home_desc: "The overarching theme of our research is to understand how host proteins restrict or enable viral replication, with a focus on HIV-1, SARS-CoV-2, and emerging viruses. We pioneer CRISPR-based cure strategies and integrate AI-driven approaches to decode virus–host interfaces.",
+            research_title: "Research Focus",
+            publications_title: "Selected Publications",
+            members_title: "Lab Members",
+            alumni_title: "Alumni",
+            community_title: "Community & In the News",
+            events_title: "Upcoming Events",
+            contact_title: "Contact Us",
+            feature1_title: "HIV cure · CRISPR pioneer",
+            feature1_desc: "First to demonstrate CRISPR-Cas9 excision of integrated HIV-1 provirus.",
+            feature2_title: "Host restriction factors",
+            feature2_desc: "Discovery of IFITM, MxB, tetherin antiviral mechanisms.",
+            feature3_title: "AI + multi‑omics",
+            feature3_desc: "Machine learning to predict viral escape, design RNA-targeting molecules."
         },
         fr: {
-            nav_home: "Accueil", nav_research: "Recherche", nav_lab: "Laboratoire", nav_join: "Nous rejoindre", nav_contact: "Contact",
-            hero_badge: "⚡ Virologie augmentée par IA · Recrutement interdisciplinaire",
-            hero_title1: "Laboratoire Chen Liang",
-            hero_title2: "Intelligence virus‑hôte · Guérison VIH · Préparation pandémique",
-            hero_desc: "Nous fusionnons virologie moléculaire, criblage CRISPR et IA générative pour décoder la pathogenèse virale. Rejoignez-nous à la frontière entre calcul et biologie.",
-            hero_btn_join: "Rejoindre le labo", hero_btn_research: "Explorer la science",
-            stat1: "Recherche vers la guérison du VIH", stat2: "articles évalués", stat3: "financement continu", stat4: "protéomique + bioinformatique",
-            about_title: "Chercheur principal",
-            pi_name: "Dr Chen Liang, PhD", pi_title: "Professeur, Département de médecine, Université McGill\nChercheur principal, Institut Lady Davis\nDirecteur, Centre McGill des maladies virales",
-            aff_title: "Affiliation & direction", aff_text: "Université McGill – Division des maladies infectieuses et microbiologie; Institut Lady Davis; pionnier de l’application CRISPR pour l’éradication du VIH.",
-            funding: "IRSC, FRQS, CANFAR, partenariats NIH",
-            research_title: "Fronts de recherche : mécanismes moléculaires et découverte par IA",
-            r1_title: "VIH-1 & restriction par l’hôte", r1_desc: "Étude des protéines IFITM, MxB, APOBEC3G et tetherin bloquant le VIH-1. Criblage protéomique pour identifier de nouveaux facteurs de restriction.",
-            r2_title: "Guérison du VIH par CRISPR", r2_desc: "Application pionnière de CRISPR-Cas9 pour exciser l’ADN proviral intégré. Travaux actuels : délivrance précise, mutations d’échappement et stratégies de réversion de latence.",
-            r3_title: "SARS-CoV-2 & dérégulation de l’interféron", r3_desc: "Compréhension des réponses immunitaires innées anormales dans la COVID-19 sévère; découverte de petites molécules inhibitrices (ex: anthracyclines).",
-            r4_title: "IA et intégration multi‑omique", r4_desc: "Apprentissage automatique pour prédire les interactions virus‑hôte, accélérer le repositionnement de médicaments et concevoir des molécules ciblant l’ARN.",
-            lab_title: "Pourquoi le laboratoire Liang à l’ère de l’IA ?",
-            ai_vision: "🤖 Virologie augmentée par l’IA",
-            ai_text1: "Nous combinons criblage CRISPR, transcriptomique unicellulaire et modèles génératifs pour prédire l’échappement viral et concevoir de nouveaux antiviraux. Le laboratoire développe activement des agents IA pour analyser l’évolution virale.",
-            ai_text2: "Nous recherchons des biologistes computationnels, ingénieurs en ML et physiciens désireux de relever les défis pandémiques. La formation interdisciplinaire est au cœur de notre approche.",
-            open_role: "📢 Postes ouverts", open_text: "Stagiaires postdoctoraux • doctorants/maîtrise • ingénieurs ML • chercheurs invités en calcul", open_btn: "Manifestez votre intérêt",
-            pubs_title: "Publications phares (IA & virologie)",
-            ai_collab: "IA/ML au laboratoire", ai_collab_text: "Projets actuels : modèles de langage protéique (ESM-2) pour prédire les interfaces antivirales; deep learning pour prédire l’échappement des guides CRISPR; modèles génératifs pour petites molécules liant l’ARN.",
-            tools: "Python, PyTorch, pipelines scRNA-seq, biopython",
-            join_title: "Rejoignez-nous — construisons l’avenir de l’antiviral par l’IA",
-            join_interest: "Vous êtes biologiste computationnel, chercheur en IA ou virologue passionné par le code ?",
-            join_desc: "Nous offrons un environnement collaboratif à l’Université McGill (Montréal), des installations BSL3/BSL2+ de pointe, des clusters de calcul et un mentorat pour allier biologie expérimentale et intelligence artificielle. Forte encouragement aux candidatures avec formation en ML, data science ou physique — aucune expérience préalable en virologie requise.",
-            join_email: "Contacter Dr Liang", join_contact: "Contacter le coordonnateur",
-            contact_title: "Nous contacter", scholar: "Google Scholar & profils", follow_lab: "🔬 Suivez l’actualité : séminaires IA x virologie, événements avec Mila et unités de bioinformatique.",
-            footer_text: "© 2026 Laboratoire Chen Liang, Université McGill — Recrutement interdisciplinaire. Science ouverte, environnement inclusif."
+            home_title: "Laboratoire Chen Liang",
+            home_desc: "Notre recherche vise à comprendre comment les protéines de l'hôte restreignent ou permettent la réplication virale, en se concentrant sur le VIH-1, le SARS-CoV-2 et les virus émergents. Nous sommes pionniers des stratégies de guérison basées sur CRISPR et intégrons des approches d'IA pour décoder les interactions virus-hôte.",
+            research_title: "Axes de recherche",
+            publications_title: "Publications sélectionnées",
+            members_title: "Membres du laboratoire",
+            alumni_title: "Anciens membres",
+            community_title: "Communauté et actualités",
+            events_title: "Événements à venir",
+            contact_title: "Nous contacter",
+            feature1_title: "Guérison du VIH · pionnier CRISPR",
+            feature1_desc: "Première démonstration de l'excision du provirus VIH-1 intégré par CRISPR-Cas9.",
+            feature2_title: "Facteurs de restriction de l'hôte",
+            feature2_desc: "Découverte des mécanismes antiviraux IFITM, MxB, tetherin.",
+            feature3_title: "IA et multi-omique",
+            feature3_desc: "Apprentissage automatique pour prédire l'échappement viral, concevoir des molécules ciblant l'ARN."
         }
     };
-    let currentLang = 'en';
+    let currentLang = "en";
+    let currentPublicPage = "home";
+    let currentAdminTab = "publications";
+    let isAdminMode = false;
+
+    // 渲染普通页面
+    function renderPublicPage(page) {
+        const container = document.getElementById("public-container");
+        if (!container) return;
+        let html = "";
+        const t = strings[currentLang];
+        if (page === "home") {
+            html = `
+                <div class="hero-image"><div style="text-align:center;"><i class="fas fa-microscope" style="font-size:4rem; color:var(--blue-bright);"></i><p>🔬 Immunofluorescence image placeholder<br><span style="font-size:0.85rem;">(Representative image from Liang Lab — HIV-1 Gag / CRISPR editing / innate immunity)</span></p></div></div>
+                <div class="lab-quote"><p style="font-size:1.2rem;">${t.home_desc}</p><p style="margin-top:1rem;">— Chen Liang, PhD</p></div>
+                <div class="feature-box">
+                    <div class="feature"><i class="fas fa-dna fa-2x" style="color:var(--green-accent);"></i><h3 style="margin:0.5rem 0;">${t.feature1_title}</h3><p>${t.feature1_desc}</p></div>
+                    <div class="feature"><i class="fas fa-virus fa-2x" style="color:var(--orange-accent);"></i><h3 style="margin:0.5rem 0;">${t.feature2_title}</h3><p>${t.feature2_desc}</p></div>
+                    <div class="feature"><i class="fas fa-chart-line fa-2x" style="color:var(--gold-accent);"></i><h3 style="margin:0.5rem 0;">${t.feature3_title}</h3><p>${t.feature3_desc}</p></div>
+                </div>
+            `;
+        } else if (page === "research") {
+            html = `
+                <h2 class="section-title">${t.research_title}</h2>
+                <div class="research-grid">
+                    <div class="research-card"><i class="fas fa-scissors fa-2x" style="color:var(--blue-bright);"></i><h3>CRISPR‑based HIV cure</h3><p>Using Cas9/CRISPR to excise proviral DNA from infected cells, combined with latency reversal agents.</p></div>
+                    <div class="research-card"><i class="fas fa-shield-virus fa-2x" style="color:var(--green-accent);"></i><h3>Innate immunity & restriction factors</h3><p>Elucidating IFITM, MxB, APOBEC3G, and tetherin antiviral mechanisms.</p></div>
+                    <div class="research-card"><i class="fas fa-lungs fa-2x" style="color:var(--orange-accent);"></i><h3>SARS-CoV-2 & interferon dysregulation</h3><p>Understanding cytokine storms, identifying small molecule inhibitors.</p></div>
+                    <div class="research-card"><i class="fas fa-brain fa-2x" style="color:var(--gold-accent);"></i><h3>AI‑augmented virology</h3><p>Protein language models, CRISPR escape prediction, generative AI for RNA-binding molecules.</p></div>
+                </div>
+            `;
+        } else if (page === "publications") {
+            let pubHtml = `<h2 class="section-title">${t.publications_title}</h2>`;
+            db.publications.sort((a,b)=>b.year-a.year).forEach(p => {
+                pubHtml += `<div class="pub-item"><div class="pub-title">${p.title}</div><div class="pub-authors">${p.authors}</div><div class="pub-journal">${p.journal} (${p.year})</div></div>`;
+            });
+            pubHtml += `<div style="margin-top:2rem;"><a href="https://scholar.google.com/citations?user=Ird_SeQAAAAJ&hl=en" target="_blank" class="btn-outline-lab">Full Google Scholar <i class="fas fa-arrow-right"></i></a></div>`;
+            html = pubHtml;
+        } else if (page === "members") {
+            let membersHtml = `<h2 class="section-title">${t.members_title}</h2><div class="members-grid">`;
+            db.members.forEach(m => {
+                membersHtml += `<div class="member-card">${m.photo ? `<img src="${m.photo}" class="member-photo">` : `<i class="fas fa-user-circle fa-3x" style="color:var(--blue-bright);"></i>`}<div class="member-name">${m.name}</div><div class="member-title">${m.title}</div><p>${m.bio}</p></div>`;
+            });
+            membersHtml += `</div>`;
+            html = membersHtml;
+        } else if (page === "alumni") {
+            let alumniHtml = `<h2 class="section-title">${t.alumni_title}</h2><div class="alumni-grid">`;
+            db.alumni.forEach(a => {
+                alumniHtml += `<div class="alumni-card"><div class="member-name">${a.name}</div><div class="member-title">${a.role}</div></div>`;
+            });
+            alumniHtml += `</div>`;
+            html = alumniHtml;
+        } else if (page === "community") {
+            let commHtml = `<h2 class="section-title">${t.community_title}</h2><div class="community-grid">`;
+            db.community.forEach(c => {
+                commHtml += `<div class="community-card"><div class="community-date">${c.date}</div><div class="community-title">${c.type === "video" ? "🎥 Video" : "📰 News"}</div><p>${c.content}</p>${c.link ? `<a href="${c.link}" target="_blank" class="btn-outline-lab">Watch</a>` : ""}</div>`;
+            });
+            commHtml += `</div>`;
+            html = commHtml;
+        } else if (page === "events") {
+            let eventsHtml = `<h2 class="section-title">${t.events_title}</h2><div class="events-grid">`;
+            db.events.forEach(e => {
+                eventsHtml += `<div class="event-card"><div class="event-date">${e.date}</div><div class="event-title">${e.title}</div><p>${e.description}</p><p><i class="fas fa-map-marker-alt"></i> ${e.location}</p></div>`;
+            });
+            eventsHtml += `</div>`;
+            html = eventsHtml;
+        } else if (page === "contact") {
+            html = `<h2 class="section-title">${t.contact_title}</h2><div class="contact-info"><p><i class="fas fa-map-marker-alt"></i> Lady Davis Institute, 3755 Côte-Sainte-Catherine, Montréal, QC H3T 1E2</p><p><i class="fas fa-envelope"></i> chen.liang@mcgill.ca</p><p><i class="fas fa-phone-alt"></i> +1 (514) 340-8222 ext. 24826</p><hr><p><strong>Join our team:</strong> We welcome inquiries from prospective graduate students, postdocs, and computational scientists.</p><a href="mailto:chen.liang@mcgill.ca?subject=Interest in Liang Lab" class="btn-outline-lab" style="margin-top:1rem; display:inline-block;">Express interest</a></div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    // 管理面板渲染
+    function renderAdminTab(tab) {
+        const container = document.getElementById("admin-content");
+        if (!container) return;
+        let html = `<div class="admin-panel">`;
+        if (tab === "publications") {
+            html += `<h3>Manage Publications</h3>
+                <form id="adminPubForm" class="admin-form">
+                    <input type="text" id="pubYear" placeholder="Year" required>
+                    <input type="text" id="pubTitle" placeholder="Title" required>
+                    <input type="text" id="pubAuthors" placeholder="Authors" required>
+                    <input type="text" id="pubJournal" placeholder="Journal" required>
+                    <button type="submit" class="admin-btn">Add Publication</button>
+                </form>
+                <div class="data-list" id="pubList"></div>`;
+        } else if (tab === "members") {
+            html += `<h3>Manage Members</h3>
+                <form id="adminMemberForm" class="admin-form">
+                    <input type="text" id="memName" placeholder="Name" required>
+                    <input type="text" id="memTitle" placeholder="Title" required>
+                    <textarea id="memBio" placeholder="Bio"></textarea>
+                    <input type="text" id="memPhoto" placeholder="Photo URL (optional)">
+                    <button type="submit" class="admin-btn">Add Member</button>
+                </form>
+                <div class="data-list" id="memberList"></div>`;
+        } else if (tab === "alumni") {
+            html += `<h3>Manage Alumni</h3>
+                <form id="adminAlumniForm" class="admin-form">
+                    <input type="text" id="alumName" placeholder="Name" required>
+                    <input type="text" id="alumRole" placeholder="Role / Current position" required>
+                    <button type="submit" class="admin-btn">Add Alumni</button>
+                </form>
+                <div class="data-list" id="alumniList"></div>`;
+        } else if (tab === "community") {
+            html += `<h3>Manage Community / News</h3>
+                <form id="adminCommunityForm" class="admin-form">
+                    <input type="text" id="commDate" placeholder="Date (YYYY-MM)" required>
+                    <select id="commType">
+                        <option value="news">News</option>
+                        <option value="video">Video</option>
+                    </select>
+                    <textarea id="commContent" placeholder="Content" required></textarea>
+                    <input type="text" id="commLink" placeholder="Link (optional)">
+                    <button type="submit" class="admin-btn">Add Item</button>
+                </form>
+                <div class="data-list" id="communityList"></div>`;
+        } else if (tab === "events") {
+            html += `<h3>Manage Events</h3>
+                <form id="adminEventForm" class="admin-form">
+                    <input type="text" id="eventDate" placeholder="Date (YYYY-MM-DD)" required>
+                    <input type="text" id="eventTitle" placeholder="Title" required>
+                    <textarea id="eventDesc" placeholder="Description"></textarea>
+                    <input type="text" id="eventLoc" placeholder="Location" required>
+                    <input type="text" id="eventPhoto" placeholder="Photo URL (optional)">
+                    <button type="submit" class="admin-btn">Add Event</button>
+                </form>
+                <div class="data-list" id="eventList"></div>`;
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+        refreshAdminLists(tab);
+        
+        // 绑定表单事件
+        if (tab === "publications") document.getElementById("adminPubForm").onsubmit = (e) => { e.preventDefault(); addPublicationAdmin(); };
+        else if (tab === "members") document.getElementById("adminMemberForm").onsubmit = (e) => { e.preventDefault(); addMemberAdmin(); };
+        else if (tab === "alumni") document.getElementById("adminAlumniForm").onsubmit = (e) => { e.preventDefault(); addAlumniAdmin(); };
+        else if (tab === "community") document.getElementById("adminCommunityForm").onsubmit = (e) => { e.preventDefault(); addCommunityAdmin(); };
+        else if (tab === "events") document.getElementById("adminEventForm").onsubmit = (e) => { e.preventDefault(); addEventAdmin(); };
+    }
+    
+    function refreshAdminLists(tab) {
+        if (tab === "publications") {
+            const listDiv = document.getElementById("pubList");
+            if (listDiv) listDiv.innerHTML = db.publications.map((p,i)=>`<div class="data-item"><span><strong>${p.year}</strong> ${p.title}<br><small>${p.authors} — ${p.journal}</small></span><button class="delete-btn" onclick="deletePub(${i})">Delete</button></div>`).join("");
+        } else if (tab === "members") {
+            const listDiv = document.getElementById("memberList");
+            if (listDiv) listDiv.innerHTML = db.members.map((m,i)=>`<div class="data-item"><span><strong>${m.name}</strong> (${m.title})<br><small>${m.bio.substring(0,80)}</small></span><button class="delete-btn" onclick="deleteMember(${i})">Delete</button></div>`).join("");
+        } else if (tab === "alumni") {
+            const listDiv = document.getElementById("alumniList");
+            if (listDiv) listDiv.innerHTML = db.alumni.map((a,i)=>`<div class="data-item"><span><strong>${a.name}</strong> — ${a.role}</span><button class="delete-btn" onclick="deleteAlumni(${i})">Delete</button></div>`).join("");
+        } else if (tab === "community") {
+            const listDiv = document.getElementById("communityList");
+            if (listDiv) listDiv.innerHTML = db.community.map((c,i)=>`<div class="data-item"><span><strong>[${c.date}] ${c.type}</strong> ${c.content.substring(0,60)}</span><button class="delete-btn" onclick="deleteCommunity(${i})">Delete</button></div>`).join("");
+        } else if (tab === "events") {
+            const listDiv = document.getElementById("eventList");
+            if (listDiv) listDiv.innerHTML = db.events.map((e,i)=>`<div class="data-item"><span><strong>${e.date}</strong> ${e.title}<br><small>${e.location}</small></span><button class="delete-btn" onclick="deleteEvent(${i})">Delete</button></div>`).join("");
+        }
+    }
+    
+    // 增删改查函数（全局）
+    window.deletePub = (idx) => { db.publications.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
+    window.deleteMember = (idx) => { db.members.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
+    window.deleteAlumni = (idx) => { db.alumni.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
+    window.deleteCommunity = (idx) => { db.community.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
+    window.deleteEvent = (idx) => { db.events.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
+    
+    function addPublicationAdmin() {
+        db.publications.push({ year: document.getElementById("pubYear").value, title: document.getElementById("pubTitle").value, authors: document.getElementById("pubAuthors").value, journal: document.getElementById("pubJournal").value });
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        document.getElementById("adminPubForm").reset();
+    }
+    function addMemberAdmin() {
+        db.members.push({ name: document.getElementById("memName").value, title: document.getElementById("memTitle").value, bio: document.getElementById("memBio").value, photo: document.getElementById("memPhoto").value });
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        document.getElementById("adminMemberForm").reset();
+    }
+    function addAlumniAdmin() {
+        db.alumni.push({ name: document.getElementById("alumName").value, role: document.getElementById("alumRole").value });
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        document.getElementById("adminAlumniForm").reset();
+    }
+    function addCommunityAdmin() {
+        db.community.push({ date: document.getElementById("commDate").value, type: document.getElementById("commType").value, content: document.getElementById("commContent").value, link: document.getElementById("commLink").value });
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        document.getElementById("adminCommunityForm").reset();
+    }
+    function addEventAdmin() {
+        db.events.push({ date: document.getElementById("eventDate").value, title: document.getElementById("eventTitle").value, description: document.getElementById("eventDesc").value, location: document.getElementById("eventLoc").value, photo: document.getElementById("eventPhoto").value });
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        document.getElementById("adminEventForm").reset();
+    }
+    
+    // 视图切换
+    function setAdminMode(active) {
+        isAdminMode = active;
+        const publicNav = document.getElementById("publicNav");
+        const adminNav = document.getElementById("adminNavBar");
+        const publicContainer = document.getElementById("public-container");
+        const adminContainer = document.getElementById("admin-container");
+        if (active) {
+            publicNav.style.display = "none";
+            adminNav.style.display = "flex";
+            publicContainer.style.display = "none";
+            adminContainer.classList.add("active");
+            renderAdminTab(currentAdminTab);
+        } else {
+            publicNav.style.display = "flex";
+            adminNav.style.display = "none";
+            publicContainer.style.display = "block";
+            adminContainer.classList.remove("active");
+            renderPublicPage(currentPublicPage);
+            // 更新普通导航激活状态
+            document.querySelectorAll("#publicNav a").forEach(link => {
+                const page = link.getAttribute("data-page");
+                if (page === currentPublicPage) link.classList.add("active");
+                else link.classList.remove("active");
+            });
+        }
+    }
+    
+    // 2FA 验证模态框
+    function showAuthModal(callback) {
+        const modalDiv = document.createElement("div");
+        modalDiv.className = "modal";
+        modalDiv.innerHTML = `
+            <div class="modal-content">
+                <h3>Admin Access</h3>
+                <input type="password" id="adminPassword" placeholder="Password" style="width:100%; padding:8px; margin-bottom:12px;">
+                <input type="text" id="admin2FA" placeholder="2FA Code (e.g., 123456)" style="width:100%; padding:8px; margin-bottom:12px;">
+                <button id="authSubmit" class="admin-btn">Verify</button>
+                <button id="authCancel" style="margin-left:12px;">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        const submitBtn = modalDiv.querySelector("#authSubmit");
+        const cancelBtn = modalDiv.querySelector("#authCancel");
+        const passwordInput = modalDiv.querySelector("#adminPassword");
+        const codeInput = modalDiv.querySelector("#admin2FA");
+        submitBtn.onclick = () => {
+            const pwd = passwordInput.value;
+            const code = codeInput.value;
+            if (pwd === "LiangLab2026" && code === "123456") {
+                modalDiv.remove();
+                callback(true);
+            } else {
+                alert("Invalid credentials");
+            }
+        };
+        cancelBtn.onclick = () => {
+            modalDiv.remove();
+            callback(false);
+        };
+    }
+    
+    // 导航事件
+    document.getElementById("homeLink").addEventListener("click", (e) => {
+        e.preventDefault();
+        if (!isAdminMode) {
+            currentPublicPage = "home";
+            renderPublicPage("home");
+            window.location.hash = "home";
+        }
+    });
+    document.querySelectorAll("#publicNav a[data-page]").forEach(link => {
+        link.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (isAdminMode) return;
+            const page = link.getAttribute("data-page");
+            currentPublicPage = page;
+            renderPublicPage(page);
+            window.location.hash = page;
+            document.querySelectorAll("#publicNav a").forEach(l => l.classList.remove("active"));
+            link.classList.add("active");
+        });
+    });
+    
+    // 移除 Admin 按钮，因此不需要 adminLoginBtn 的事件。管理员入口仅通过 #admin 路由。
+    document.getElementById("exitAdminBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        setAdminMode(false);
+        window.location.hash = "home";
+    });
+    document.querySelectorAll("#adminNavBar a[data-admin-tab]").forEach(link => {
+        link.addEventListener("click", (e) => {
+            e.preventDefault();
+            const tab = link.getAttribute("data-admin-tab");
+            currentAdminTab = tab;
+            renderAdminTab(tab);
+            document.querySelectorAll("#adminNavBar a").forEach(l => l.classList.remove("active"));
+            link.classList.add("active");
+        });
+    });
+    
+    // 语言切换
     function setLanguage(lang) {
         currentLang = lang;
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (translations[lang][key]) el.innerText = translations[lang][key];
-        });
-        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-            const key = el.getAttribute('data-i18n-placeholder');
-            if (translations[lang][key]) el.placeholder = translations[lang][key];
-        });
-        document.getElementById('langEn').classList.toggle('active', lang === 'en');
-        document.getElementById('langFr').classList.toggle('active', lang === 'fr');
+        if (!isAdminMode) renderPublicPage(currentPublicPage);
+        document.getElementById("langEnFooter").classList.toggle("active", lang === "en");
+        document.getElementById("langFrFooter").classList.toggle("active", lang === "fr");
     }
-    document.getElementById('langEn').addEventListener('click', () => setLanguage('en'));
-    document.getElementById('langFr').addEventListener('click', () => setLanguage('fr'));
-    setLanguage('en');
+    document.getElementById("langEnFooter").addEventListener("click", () => setLanguage("en"));
+    document.getElementById("langFrFooter").addEventListener("click", () => setLanguage("fr"));
+    
+    // 路由初始化：只有 hash 为 "admin" 才进入管理登录流程
+    function handleHash() {
+        const hash = window.location.hash.slice(1);
+        if (hash === "admin") {
+            if (!isAdminMode) {
+                showAuthModal((success) => {
+                    if (success) setAdminMode(true);
+                    else window.location.hash = "home";
+                });
+            } else {
+                setAdminMode(true);
+            }
+        } else {
+            if (isAdminMode) setAdminMode(false);
+            if (hash && ["home","research","publications","members","alumni","community","events","contact"].includes(hash)) {
+                currentPublicPage = hash;
+                renderPublicPage(currentPublicPage);
+                document.querySelectorAll("#publicNav a").forEach(link => {
+                    const page = link.getAttribute("data-page");
+                    if (page === currentPublicPage) link.classList.add("active");
+                    else link.classList.remove("active");
+                });
+            } else {
+                currentPublicPage = "home";
+                renderPublicPage("home");
+                document.querySelectorAll("#publicNav a").forEach(link => link.classList.remove("active"));
+                document.querySelector("#publicNav a[data-page='home']")?.classList.add("active");
+            }
+        }
+    }
+    
+    loadData();
+    window.addEventListener("hashchange", handleHash);
+    handleHash();
+    setLanguage("en");
 </script>
 </body>
 </html>
