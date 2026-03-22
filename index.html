@@ -27,6 +27,9 @@
             color: var(--text-dark);
             line-height: 1.5;
             scroll-behavior: smooth;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
         .site-header {
@@ -75,7 +78,7 @@
             border-bottom-color: var(--gold-accent);
             color: var(--gold-accent);
         }
-        /* 管理导航栏：平时隐藏，admin模式时显示，占顶部区域2/3宽度且靠右 */
+        /* 管理导航栏：平时隐藏，admin模式时显示 */
         .admin-nav-bar {
             display: none;
             gap: 1rem;
@@ -85,13 +88,12 @@
             justify-content: flex-end;
             margin-left: auto;
         }
-        /* 缩小管理选项卡的尺寸（大小缩小一半） */
         .admin-nav-bar a {
             color: white;
             text-decoration: none;
             font-weight: 500;
-            padding: 0.2rem 0.4rem;      /* 原0.4rem 0.8rem，缩小一半 */
-            font-size: 0.8rem;           /* 明确缩小字体 */
+            padding: 0.2rem 0.4rem;
+            font-size: 0.8rem;
             border-radius: 40px;
             transition: 0.2s;
             white-space: nowrap;
@@ -103,13 +105,16 @@
         .exit-admin {
             background: rgba(0,0,0,0.2);
             border-radius: 40px;
-            padding: 0.2rem 0.6rem;      /* 相应缩小 */
+            padding: 0.2rem 0.6rem;
         }
         .exit-admin:hover {
             background: var(--orange-accent);
             color: white !important;
         }
-        .page-content { min-height: 65vh; padding: 3rem 0 4rem; }
+        .page-content {
+            flex: 1;  /* 撑满剩余空间，footer 自动到底 */
+            padding: 3rem 0 4rem;
+        }
         
         /* 普通视图样式 */
         .members-grid, .alumni-grid, .events-grid, .community-grid {
@@ -281,23 +286,22 @@
 <header class="site-header">
     <div class="container header-container">
         <div class="lab-title">
-            <a href="#" id="homeLink">
+            <a href="/" id="homeLink">
                 <h1>Liang Lab <span style="font-size:1rem;">· Viral Pathogenesis & AI</span></h1>
                 <p>McGill University · Lady Davis Institute</p>
             </a>
         </div>
-        <!-- 普通导航栏（已移除 Admin 按钮） -->
+        <!-- 普通导航栏（无 admin 按钮） -->
         <ul class="nav-links" id="publicNav">
-            <li><a href="#" data-page="research">Research</a></li>
-            <li><a href="#" data-page="publications">Publications</a></li>
-            <li><a href="#" data-page="members">Lab Members</a></li>
-            <li><a href="#" data-page="alumni">Alumni</a></li>
-            <li><a href="#" data-page="community">Community</a></li>
-            <li><a href="#" data-page="events">Events</a></li>
-            <li><a href="#" data-page="contact">Contact</a></li>
-            <!-- Admin 入口已隐藏，仅通过 /#admin 访问 -->
+            <li><a href="/research">Research</a></li>
+            <li><a href="/publications">Publications</a></li>
+            <li><a href="/members">Lab Members</a></li>
+            <li><a href="/alumni">Alumni</a></li>
+            <li><a href="/community">Community</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/contact">Contact</a></li>
         </ul>
-        <!-- 管理导航栏（admin模式显示，尺寸已缩小） -->
+        <!-- 管理导航栏 -->
         <div class="admin-nav-bar" id="adminNavBar">
             <a href="#" data-admin-tab="publications">Manage Publications</a>
             <a href="#" data-admin-tab="members">Manage Members</a>
@@ -312,7 +316,6 @@
 <main class="page-content">
     <!-- 普通视图容器 -->
     <div class="container" id="public-container"></div>
-    
     <!-- 管理视图容器 -->
     <div class="container admin-view-container" id="admin-container">
         <div id="admin-content"></div>
@@ -404,7 +407,7 @@
         }
     };
     let currentLang = "en";
-    let currentPublicPage = "home";
+    let currentPage = "home";
     let currentAdminTab = "publications";
     let isAdminMode = false;
 
@@ -537,7 +540,6 @@
         container.innerHTML = html;
         refreshAdminLists(tab);
         
-        // 绑定表单事件
         if (tab === "publications") document.getElementById("adminPubForm").onsubmit = (e) => { e.preventDefault(); addPublicationAdmin(); };
         else if (tab === "members") document.getElementById("adminMemberForm").onsubmit = (e) => { e.preventDefault(); addMemberAdmin(); };
         else if (tab === "alumni") document.getElementById("adminAlumniForm").onsubmit = (e) => { e.preventDefault(); addAlumniAdmin(); };
@@ -564,36 +566,35 @@
         }
     }
     
-    // 增删改查函数（全局）
-    window.deletePub = (idx) => { db.publications.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
-    window.deleteMember = (idx) => { db.members.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
-    window.deleteAlumni = (idx) => { db.alumni.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
-    window.deleteCommunity = (idx) => { db.community.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
-    window.deleteEvent = (idx) => { db.events.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage); };
+    window.deletePub = (idx) => { db.publications.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
+    window.deleteMember = (idx) => { db.members.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
+    window.deleteAlumni = (idx) => { db.alumni.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
+    window.deleteCommunity = (idx) => { db.community.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
+    window.deleteEvent = (idx) => { db.events.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
     
     function addPublicationAdmin() {
         db.publications.push({ year: document.getElementById("pubYear").value, title: document.getElementById("pubTitle").value, authors: document.getElementById("pubAuthors").value, journal: document.getElementById("pubJournal").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
         document.getElementById("adminPubForm").reset();
     }
     function addMemberAdmin() {
         db.members.push({ name: document.getElementById("memName").value, title: document.getElementById("memTitle").value, bio: document.getElementById("memBio").value, photo: document.getElementById("memPhoto").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
         document.getElementById("adminMemberForm").reset();
     }
     function addAlumniAdmin() {
         db.alumni.push({ name: document.getElementById("alumName").value, role: document.getElementById("alumRole").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
         document.getElementById("adminAlumniForm").reset();
     }
     function addCommunityAdmin() {
         db.community.push({ date: document.getElementById("commDate").value, type: document.getElementById("commType").value, content: document.getElementById("commContent").value, link: document.getElementById("commLink").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
         document.getElementById("adminCommunityForm").reset();
     }
     function addEventAdmin() {
         db.events.push({ date: document.getElementById("eventDate").value, title: document.getElementById("eventTitle").value, description: document.getElementById("eventDesc").value, location: document.getElementById("eventLoc").value, photo: document.getElementById("eventPhoto").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPublicPage);
+        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
         document.getElementById("adminEventForm").reset();
     }
     
@@ -615,13 +616,47 @@
             adminNav.style.display = "none";
             publicContainer.style.display = "block";
             adminContainer.classList.remove("active");
-            renderPublicPage(currentPublicPage);
-            // 更新普通导航激活状态
-            document.querySelectorAll("#publicNav a").forEach(link => {
-                const page = link.getAttribute("data-page");
-                if (page === currentPublicPage) link.classList.add("active");
-                else link.classList.remove("active");
+            renderPublicPage(currentPage);
+            updateNavActive(currentPage);
+        }
+    }
+    
+    // 更新普通导航激活状态
+    function updateNavActive(page) {
+        document.querySelectorAll("#publicNav a").forEach(link => {
+            const href = link.getAttribute("href");
+            if (href === `/${page}` || (page === "home" && href === "/")) {
+                link.classList.add("active");
+            } else {
+                link.classList.remove("active");
+            }
+        });
+    }
+    
+    // 路由核心：根据路径渲染
+    function navigateTo(path, push = true) {
+        let page = path === "/" ? "home" : path.slice(1);
+        const validPages = ["home","research","publications","members","alumni","community","events","contact"];
+        if (!validPages.includes(page)) page = "home";
+        
+        if (push) history.pushState(null, "", page === "home" ? "/" : `/${page}`);
+        
+        if (isAdminMode) setAdminMode(false);
+        currentPage = page;
+        renderPublicPage(page);
+        updateNavActive(page);
+    }
+    
+    // 处理 admin 路由
+    function navigateToAdmin(push = true) {
+        if (push) history.pushState(null, "", "/admin");
+        if (!isAdminMode) {
+            showAuthModal((success) => {
+                if (success) setAdminMode(true);
+                else navigateTo("/", true);
             });
+        } else {
+            setAdminMode(true);
         }
     }
     
@@ -659,34 +694,25 @@
         };
     }
     
-    // 导航事件
+    // 事件监听
     document.getElementById("homeLink").addEventListener("click", (e) => {
         e.preventDefault();
-        if (!isAdminMode) {
-            currentPublicPage = "home";
-            renderPublicPage("home");
-            window.location.hash = "home";
-        }
+        navigateTo("/");
     });
-    document.querySelectorAll("#publicNav a[data-page]").forEach(link => {
+    
+    document.querySelectorAll("#publicNav a").forEach(link => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
-            if (isAdminMode) return;
-            const page = link.getAttribute("data-page");
-            currentPublicPage = page;
-            renderPublicPage(page);
-            window.location.hash = page;
-            document.querySelectorAll("#publicNav a").forEach(l => l.classList.remove("active"));
-            link.classList.add("active");
+            const href = link.getAttribute("href");
+            navigateTo(href);
         });
     });
     
-    // 移除 Admin 按钮，因此不需要 adminLoginBtn 的事件。管理员入口仅通过 #admin 路由。
     document.getElementById("exitAdminBtn").addEventListener("click", (e) => {
         e.preventDefault();
-        setAdminMode(false);
-        window.location.hash = "home";
+        navigateTo("/");
     });
+    
     document.querySelectorAll("#adminNavBar a[data-admin-tab]").forEach(link => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
@@ -701,47 +727,28 @@
     // 语言切换
     function setLanguage(lang) {
         currentLang = lang;
-        if (!isAdminMode) renderPublicPage(currentPublicPage);
+        if (!isAdminMode) renderPublicPage(currentPage);
         document.getElementById("langEnFooter").classList.toggle("active", lang === "en");
         document.getElementById("langFrFooter").classList.toggle("active", lang === "fr");
     }
     document.getElementById("langEnFooter").addEventListener("click", () => setLanguage("en"));
     document.getElementById("langFrFooter").addEventListener("click", () => setLanguage("fr"));
     
-    // 路由初始化：只有 hash 为 "admin" 才进入管理登录流程
-    function handleHash() {
-        const hash = window.location.hash.slice(1);
-        if (hash === "admin") {
-            if (!isAdminMode) {
-                showAuthModal((success) => {
-                    if (success) setAdminMode(true);
-                    else window.location.hash = "home";
-                });
-            } else {
-                setAdminMode(true);
-            }
+    // 路由初始化 & 监听 popstate
+    function handlePopState() {
+        const path = window.location.pathname;
+        if (path === "/admin") {
+            if (!isAdminMode) navigateToAdmin(false);
+            else setAdminMode(true);
         } else {
             if (isAdminMode) setAdminMode(false);
-            if (hash && ["home","research","publications","members","alumni","community","events","contact"].includes(hash)) {
-                currentPublicPage = hash;
-                renderPublicPage(currentPublicPage);
-                document.querySelectorAll("#publicNav a").forEach(link => {
-                    const page = link.getAttribute("data-page");
-                    if (page === currentPublicPage) link.classList.add("active");
-                    else link.classList.remove("active");
-                });
-            } else {
-                currentPublicPage = "home";
-                renderPublicPage("home");
-                document.querySelectorAll("#publicNav a").forEach(link => link.classList.remove("active"));
-                document.querySelector("#publicNav a[data-page='home']")?.classList.add("active");
-            }
+            navigateTo(path || "/", false);
         }
     }
     
+    window.addEventListener("popstate", handlePopState);
     loadData();
-    window.addEventListener("hashchange", handleHash);
-    handleHash();
+    handlePopState();  // 初次加载
     setLanguage("en");
 </script>
 </body>
