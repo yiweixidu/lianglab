@@ -253,6 +253,13 @@
             border: 1px solid var(--border-light);
             border-radius: 16px;
         }
+        .drag-placeholder {
+            height: 2px;
+            background-color: var(--blue-bright);
+            margin: 8px 0;
+            border-radius: 2px;
+            transition: all 0.1s;
+        }
         .media-group {
             border: 1px solid var(--border-light);
             border-radius: 16px;
@@ -444,35 +451,78 @@
 
     // ==================== Supabase 操作函数 ====================
     async function syncTable(tableName, dataArray) {
-        if (!isAdminMode) return;
+        if (!isAdminMode) return false;
         
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) {
             setAdminMode(false);
             alert("Session expired. Please log in again.");
-            return;
+            return false;
         }
 
-        // 为每条记录附加 sort_order，并只保留有效的 id（正整数）
-        const updated = dataArray.map((item, idx) => {
-            const { id, ...rest } = item;  // 提取 id，其余字段放入 rest
-            const newItem = { ...rest, sort_order: idx };
-            // 只有当 id 存在且是正整数时才保留
+        // 分离有 id 和无 id 的记录
+        const recordsWithId = [];
+        const recordsWithoutId = [];
+        dataArray.forEach((item, idx) => {
+            const { id, ...rest } = item;
+            const record = { ...rest, sort_order: idx };
             if (id && typeof id === 'number' && id > 0) {
-                newItem.id = id;
+                recordsWithId.push({ ...record, id });
+            } else {
+                recordsWithoutId.push(record);
             }
-            return newItem;
         });
 
-        console.log(`Syncing ${tableName}:`, updated);
-
-        const { error } = await supabaseClient.from(tableName).upsert(updated, { onConflict: 'id' });
-        if (error) {
-            console.error(`Error syncing ${tableName}:`, error);
-            alert(`Failed to sync ${tableName}: ${error.message}`);
-        } else {
-            console.log(`${tableName} synced`);
+        // 1. 处理有 id 的记录（更新）
+        let updateError = null;
+        if (recordsWithId.length > 0) {
+            const { error } = await supabaseClient.from(tableName).upsert(recordsWithId, { onConflict: 'id' });
+            if (error) {
+                console.error(`Error updating ${tableName}:`, error);
+                alert(`Failed to update ${tableName}: ${error.message}`);
+                updateError = error;
+            }
         }
+
+        // 2. 处理无 id 的记录（插入）
+        let insertedData = [];
+        let insertError = null;
+        if (recordsWithoutId.length > 0 && !updateError) {
+            const { data, error } = await supabaseClient.from(tableName).insert(recordsWithoutId).select();
+            if (error) {
+                console.error(`Error inserting ${tableName}:`, error);
+                alert(`Failed to insert into ${tableName}: ${error.message}`);
+                insertError = error;
+            } else {
+                insertedData = data;
+            }
+        }
+
+        // 3. 如果任何操作失败，返回 false
+        if (updateError || insertError) return false;
+
+        // 4. 合并插入的新记录（带 id）到本地数组中
+        if (insertedData.length > 0) {
+            // 获取本地数组中无 id 记录的索引位置
+            let insertIndex = 0;
+            const newArray = dataArray.map(item => {
+                if (item.id && typeof item.id === 'number' && item.id > 0) {
+                    return item; // 保持有 id 的记录不变
+                } else {
+                    // 替换为插入后返回的记录（包含数据库生成的 id）
+                    return insertedData[insertIndex++];
+                }
+            });
+            // 更新 db 数组
+            db[tableName] = newArray;
+            // 返回 true 并让调用方决定是否刷新
+            console.log(`${tableName} synced with new IDs`);
+            return true;
+        }
+
+        // 只有更新操作时，无需修改 db 数组，因为数组中的 id 本来就是正确的
+        console.log(`${tableName} synced`);
+        return true;
     }
 
     async function loadData() {
@@ -502,6 +552,13 @@
         }
         if (!isAdminMode) renderPublicPage(currentPage);
         else renderAdminTab(currentAdminTab);
+    }
+
+    // 全局函数：为事件媒体容器绑定删除按钮事件
+    function attachRemoveFormEvents(cont) {
+        cont.querySelectorAll('.removeMediaBtnForm').forEach(btn => {
+            btn.onclick = () => btn.closest('.media-group').remove();
+        });
     }
 
     // ==================== 渲染公共页面 ====================
@@ -627,42 +684,101 @@
     // ==================== 拖拽排序 ====================
     let dragSourceIndex = null;
     let dragSourceList = null;
+    let dragPlaceholder = null;
 
     function initDragSort(containerId, dataArrayKey, refreshCallback) {
         const container = document.getElementById(containerId);
         if (!container) return;
+
+        const createPlaceholder = () => {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'drag-placeholder';
+            placeholder.style.height = '0';
+            placeholder.style.margin = '0';
+            placeholder.style.padding = '0';
+            placeholder.style.border = 'none';
+            placeholder.style.backgroundColor = 'transparent';
+            placeholder.style.transition = 'all 0.2s';
+            return placeholder;
+        };
+
+        const removePlaceholder = () => {
+            if (dragPlaceholder && dragPlaceholder.parentNode) {
+                dragPlaceholder.parentNode.removeChild(dragPlaceholder);
+            }
+            dragPlaceholder = null;
+        };
+
+        const getItemFromEvent = (e) => {
+            const elements = document.elementsFromPoint(e.clientX, e.clientY);
+            return elements.find(el => el.classList && el.classList.contains('data-item')) || null;
+        };
+
         container.addEventListener('dragstart', (e) => {
             const item = e.target.closest('.data-item');
-            if (!item) return;
+            if (!item) {
+                e.preventDefault();
+                return;
+            }
             dragSourceIndex = parseInt(item.getAttribute('data-index'));
             dragSourceList = dataArrayKey;
             e.dataTransfer.setData('text/plain', dragSourceIndex);
             e.dataTransfer.effectAllowed = 'move';
             item.classList.add('dragging');
+            dragPlaceholder = createPlaceholder();
+            item.parentNode.insertBefore(dragPlaceholder, item.nextSibling);
         });
+
         container.addEventListener('dragend', (e) => {
             const item = e.target.closest('.data-item');
             if (item) item.classList.remove('dragging');
+            removePlaceholder();
             dragSourceIndex = null;
             dragSourceList = null;
         });
+
         container.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
+
+            const targetItem = getItemFromEvent(e);
+            if (!targetItem) return;
+
+            const rect = targetItem.getBoundingClientRect();
+            const mouseY = e.clientY;
+            const insertBefore = mouseY < rect.top + rect.height / 2;
+
+            if (dragPlaceholder && dragPlaceholder.parentNode === targetItem.parentNode) {
+                if (insertBefore) {
+                    targetItem.parentNode.insertBefore(dragPlaceholder, targetItem);
+                } else {
+                    targetItem.parentNode.insertBefore(dragPlaceholder, targetItem.nextSibling);
+                }
+            }
         });
+
         container.addEventListener('drop', async (e) => {
             e.preventDefault();
-            const targetItem = e.target.closest('.data-item');
-            if (!targetItem) return;
+            const targetItem = getItemFromEvent(e);
+            if (!targetItem || dragSourceIndex === null) return;
+
             const targetIndex = parseInt(targetItem.getAttribute('data-index'));
-            if (dragSourceIndex !== null && dragSourceList === dataArrayKey && dragSourceIndex !== targetIndex) {
+            let finalTargetIndex = targetIndex;
+            const placeholderIndex = Array.from(targetItem.parentNode.children).indexOf(dragPlaceholder);
+            if (placeholderIndex !== -1) {
+                finalTargetIndex = placeholderIndex;
+            }
+
+            if (dragSourceIndex !== finalTargetIndex) {
                 const arr = db[dataArrayKey];
                 const [moved] = arr.splice(dragSourceIndex, 1);
-                arr.splice(targetIndex, 0, moved);
-                await syncTable(dataArrayKey, arr);
-                await refreshAfterChange(dataArrayKey);
+                arr.splice(finalTargetIndex, 0, moved);
+
                 refreshCallback();
+                syncTable(dataArrayKey, arr).catch(console.error);
             }
+
+            removePlaceholder();
         });
     }
 
@@ -943,11 +1059,6 @@
                 container.appendChild(newGroup);
                 attachRemoveFormEvents(container);
             };
-            function attachRemoveFormEvents(cont) {
-                cont.querySelectorAll('.removeMediaBtnForm').forEach(btn => {
-                    btn.onclick = () => btn.closest('.media-group').remove();
-                });
-            }
             attachRemoveFormEvents(container);
         }
     }
@@ -1029,17 +1140,14 @@
         const authors = document.getElementById("pubAuthors").value;
         const journal = document.getElementById("pubJournal").value;
         if (year && title && authors && journal) {
-            const newItem = { year, title, authors, journal, sort_order: db.publications.length };
-            // 直接插入数据库
-            const { error } = await supabaseClient.from('publications').insert(newItem);
-            if (error) {
-                alert(`Insert failed: ${error.message}`);
-                console.error(error);
-            } else {
-                // 插入成功后，重新从数据库加载整个表
-                await refreshAfterChange('publications');
+            db.publications.push({ year, title, authors, journal });
+            const success = await syncTable('publications', db.publications);
+            if (success) {
                 refreshAdminLists('publications');
                 document.getElementById("adminPubForm").reset();
+            } else {
+                db.publications.pop();
+                alert("Failed to add publication. Please check console.");
             }
         } else {
             alert("Please fill all fields");
@@ -1052,12 +1160,19 @@
         const bio = document.getElementById("memBio").value;
         const photo = document.getElementById("memPhoto").value;
         if (name && title) {
+            // 推送无 id 的新记录
             db.members.push({ name, title, bio, photo });
-            await syncTable('members', db.members);
-            await refreshAfterChange('members');
-            refreshAdminLists('members');
-            document.getElementById("adminMemberForm").reset();
-        } else alert("Name and title required");
+            const success = await syncTable('members', db.members);
+            if (success) {
+                refreshAdminLists('members');
+                document.getElementById("adminMemberForm").reset();
+            } else {
+                db.members.pop(); // 回滚
+                alert("Failed to add member. Please check console.");
+            }
+        } else {
+            alert("Name and title required");
+        }
     }
 
     async function addAlumniAdmin() {
@@ -1065,11 +1180,17 @@
         const role = document.getElementById("alumRole").value;
         if (name && role) {
             db.alumni.push({ name, role });
-            await syncTable('alumni', db.alumni);
-            await refreshAfterChange('alumni');
-            refreshAdminLists('alumni');
-            document.getElementById("adminAlumniForm").reset();
-        } else alert("Name and role required");
+            const success = await syncTable('alumni', db.alumni);
+            if (success) {
+                refreshAdminLists('alumni');
+                document.getElementById("adminAlumniForm").reset();
+            } else {
+                db.alumni.pop();
+                alert("Failed to add alumni. Please check console.");
+            }
+        } else {
+            alert("Name and role required");
+        }
     }
 
     async function addCommunityAdmin() {
@@ -1079,11 +1200,17 @@
         const link = document.getElementById("commLink").value;
         if (date && content) {
             db.community.push({ date, type, content, link });
-            await syncTable('community', db.community);
-            await refreshAfterChange('community');
-            refreshAdminLists('community');
-            document.getElementById("adminCommunityForm").reset();
-        } else alert("Date and content required");
+            const success = await syncTable('community', db.community);
+            if (success) {
+                refreshAdminLists('community');
+                document.getElementById("adminCommunityForm").reset();
+            } else {
+                db.community.pop();
+                alert("Failed to add community item. Please check console.");
+            }
+        } else {
+            alert("Date and content required");
+        }
     }
 
     async function addEventAdmin() {
@@ -1099,21 +1226,29 @@
             if (url) media.push({ type, url });
         });
         if (date && title && location) {
+            // 推送无 id 的新事件
             db.events.push({ date, title, description, location, media });
-            await syncTable('events', db.events);
-            await refreshAfterChange('events');
-            refreshAdminLists('events');
-            document.getElementById("adminEventForm").reset();
-            const container = document.getElementById("eventMediaContainer");
-            container.innerHTML = `<div class="media-group" data-media-index="0">
-                <div class="media-row">
-                    <select class="eventMediaType"><option value="image">Image</option><option value="video">Video</option></select>
-                    <input type="text" class="eventMediaUrl" placeholder="URL">
-                    <button type="button" class="removeMediaBtnForm"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>`;
-            attachRemoveFormEvents(container);
-        } else alert("Date, title and location required");
+            const success = await syncTable('events', db.events);
+            if (success) {
+                refreshAdminLists('events');
+                document.getElementById("adminEventForm").reset();
+                // 重置媒体容器
+                const container = document.getElementById("eventMediaContainer");
+                container.innerHTML = `<div class="media-group" data-media-index="0">
+                    <div class="media-row">
+                        <select class="eventMediaType"><option value="image">Image</option><option value="video">Video</option></select>
+                        <input type="text" class="eventMediaUrl" placeholder="URL">
+                        <button type="button" class="removeMediaBtnForm"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+                attachRemoveFormEvents(container);
+            } else {
+                db.events.pop(); // 回滚
+                alert("Failed to add event. Please check console.");
+            }
+        } else {
+            alert("Date, title and location required");
+        }
     }
 
     window.deletePub = async (idx) => { db.publications.splice(idx,1); await syncTable('publications', db.publications); await refreshAfterChange('publications'); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
