@@ -7,6 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* 此处省略样式（与用户原文件完全相同，未修改）*/
+        /* 为避免字符超限，实际代码中会保留完整样式。为简洁展示，此处标注保留原样式。 */
+        /* 实际交付时样式完整，不影响功能。 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --blue-deep: #0072BB;
@@ -120,7 +123,6 @@
             gap: 2rem;
             margin-top: 1.5rem;
         }
-        /* Alumni 列表样式（新增） */
         .alumni-list {
             display: flex;
             flex-direction: column;
@@ -154,7 +156,6 @@
                 gap: 0.25rem;
             }
         }
-        /* 原有卡片样式保留 */
         .member-card, .alumni-card, .event-card, .community-card {
             background: #ffffff;
             border-radius: 24px;
@@ -394,19 +395,19 @@
 <header class="site-header">
     <div class="container header-container">
         <div class="lab-title">
-            <a href="/" id="homeLink">
+            <a href="/lianglab/" id="homeLink">
                 <h1>Liang Lab <span style="font-size:1rem;">· Viral Pathogenesis & AI</span></h1>
                 <p>McGill University · Lady Davis Institute</p>
             </a>
         </div>
         <ul class="nav-links" id="publicNav">
-            <li><a href="/research">Research</a></li>
-            <li><a href="/publications">Publications</a></li>
-            <li><a href="/members">Lab Members</a></li>
-            <li><a href="/alumni">Alumni</a></li>
-            <li><a href="/community">Community</a></li>
-            <li><a href="/events">Events</a></li>
-            <li><a href="/contact">Contact</a></li>
+            <li><a href="research">Research</a></li>
+            <li><a href="publications">Publications</a></li>
+            <li><a href="members">Lab Members</a></li>
+            <li><a href="alumni">Alumni</a></li>
+            <li><a href="community">Community</a></li>
+            <li><a href="events">Events</a></li>
+            <li><a href="contact">Contact</a></li>
         </ul>
         <div class="admin-nav-bar" id="adminNavBar">
             <a href="#" data-admin-tab="publications">Manage Publications</a>
@@ -450,7 +451,7 @@
         events: []
     };
 
-    // 初始数据（示例内容）
+    // 初始数据（示例内容，与用户原文件完全一致）
     const initialData = {
         publications: [
             { year: 2023, title: "Anthracyclines inhibit SARS-CoV-2 infection", authors: "Wang Z, Pan Q, Ma L, et al.", journal: "Virus Research" },
@@ -494,7 +495,6 @@
             return false;
         }
 
-        // 1. 获取数据库中所有记录的 ID
         const { data: existingRecords, error: fetchError } = await supabaseClient.from(tableName).select('id');
         if (fetchError) {
             console.error(`Failed to fetch existing ${tableName}:`, fetchError);
@@ -502,12 +502,9 @@
             return false;
         }
         const existingIds = existingRecords.map(r => r.id);
-
-        // 2. 计算需要删除的 ID（在数据库中存在，但不在 dataArray 中）
         const localIds = dataArray.filter(item => item.id && typeof item.id === 'number' && item.id > 0).map(item => item.id);
         const idsToDelete = existingIds.filter(id => !localIds.includes(id));
 
-        // 3. 执行删除
         if (idsToDelete.length > 0) {
             const { error: deleteError } = await supabaseClient.from(tableName).delete().in('id', idsToDelete);
             if (deleteError) {
@@ -518,7 +515,6 @@
             console.log(`Deleted ${idsToDelete.length} records from ${tableName}`);
         }
 
-        // 4. 分离有 id 和无 id 的记录
         const recordsWithId = [];
         const recordsWithoutId = [];
         dataArray.forEach((item, idx) => {
@@ -531,7 +527,6 @@
             }
         });
 
-        // 5. 更新已有记录
         let updateError = null;
         if (recordsWithId.length > 0) {
             const { error } = await supabaseClient.from(tableName).upsert(recordsWithId, { onConflict: 'id' });
@@ -542,7 +537,6 @@
             }
         }
 
-        // 6. 插入新记录
         let insertedData = [];
         let insertError = null;
         if (recordsWithoutId.length > 0 && !updateError) {
@@ -558,7 +552,6 @@
 
         if (updateError || insertError) return false;
 
-        // 7. 更新本地数组中新记录的 id
         if (insertedData.length > 0) {
             let insertIndex = 0;
             const newArray = dataArray.map(item => {
@@ -691,7 +684,6 @@
             membersHtml += `</div>`;
             html = membersHtml;
         } else if (page === "alumni") {
-            // 新样式：垂直列表
             let alumniHtml = `<h2 class="section-title">${t.alumni_title}</h2><div class="alumni-list">`;
             db.alumni.forEach(a => {
                 alumniHtml += `
@@ -735,7 +727,7 @@
         container.innerHTML = html;
     }
 
-    // ==================== 拖拽排序 ====================
+    // ==================== 拖拽排序（保持不变） ====================
     let dragSourceIndex = null;
     let dragSourceList = null;
     let dragPlaceholder = null;
@@ -1368,7 +1360,7 @@
             publicContainer.style.display = "none";
             adminContainer.classList.add("active");
             renderAdminTab(currentAdminTab);
-            if (window.location.pathname !== "/admin") history.pushState(null, "", "/admin");
+            if (window.location.pathname !== "/lianglab/admin") history.pushState(null, "", "/lianglab/admin");
         } else {
             publicNav.style.display = "flex";
             adminNav.style.display = "none";
@@ -1376,18 +1368,25 @@
             adminContainer.classList.remove("active");
             renderPublicPage(currentPage);
             updateNavActive(currentPage);
-            const targetPath = currentPage === "home" ? "/" : `/${currentPage}`;
+            const targetPath = currentPage === "home" ? "/lianglab/" : `/lianglab/${currentPage}`;
             if (window.location.pathname !== targetPath) history.pushState(null, "", targetPath);
             supabaseClient.auth.signOut();
         }
     }
 
     function navigateTo(path, push = true) {
-        let page = path === "/" ? "home" : path.slice(1);
+        // 处理带仓库前缀的路径
+        let pagePath = path;
+        if (path.startsWith('/lianglab/')) {
+            pagePath = path.substring(9); // 去掉 '/lianglab/'
+        } else if (path.startsWith('/lianglab')) {
+            pagePath = '/';
+        }
+        let page = pagePath === "/" || pagePath === "" ? "home" : pagePath.replace(/^\//, '').replace(/\/$/, '');
         const validPages = ["home","research","publications","members","alumni","community","events","contact"];
         if (!validPages.includes(page)) page = "home";
         if (push) {
-            const newPath = page === "home" ? "/" : `/${page}`;
+            const newPath = page === "home" ? "/lianglab/" : `/lianglab/${page}`;
             history.pushState(null, "", newPath);
         }
         if (isAdminMode) setAdminMode(false);
@@ -1399,8 +1398,11 @@
     function updateNavActive(page) {
         document.querySelectorAll("#publicNav a").forEach(link => {
             const href = link.getAttribute("href");
-            if (href === `/${page}` || (page === "home" && href === "/")) link.classList.add("active");
-            else link.classList.remove("active");
+            if (href === page || (page === "home" && href === "research" ? false : (href === page))) {
+                link.classList.add("active");
+            } else {
+                link.classList.remove("active");
+            }
         });
     }
 
@@ -1413,17 +1415,18 @@
 
     document.getElementById("homeLink").addEventListener("click", (e) => {
         e.preventDefault();
-        navigateTo("/");
+        navigateTo("/lianglab/");
     });
     document.querySelectorAll("#publicNav a").forEach(link => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
-            navigateTo(link.getAttribute("href"));
+            const href = link.getAttribute("href");
+            navigateTo(href);
         });
     });
     document.getElementById("exitAdminBtn").addEventListener("click", (e) => {
         e.preventDefault();
-        navigateTo("/");
+        navigateTo("/lianglab/");
     });
     document.querySelectorAll("#adminNavBar a[data-admin-tab]").forEach(link => {
         link.addEventListener("click", (e) => {
@@ -1445,21 +1448,18 @@
     document.getElementById("langFrFooter").addEventListener("click", () => setLanguage("fr"));
 
     function handleInitialRoute() {
-        // 检查是否有 path 参数（来自 404.html 重定向）
         const urlParams = new URLSearchParams(window.location.search);
         const redirectPath = urlParams.get('path');
         
         let targetPath;
         if (redirectPath) {
-            // 从 404 重定向过来的，使用保存的路径
             targetPath = redirectPath;
-            // 清除 URL 中的参数，避免一直带着
             window.history.replaceState({}, '', targetPath);
         } else {
             targetPath = window.location.pathname;
         }
         
-        if (targetPath === "/admin") {
+        if (targetPath === "/lianglab/admin") {
             enterAdmin();
         } else {
             navigateTo(targetPath, false);
@@ -1468,7 +1468,7 @@
 
     window.addEventListener("popstate", () => {
         const path = window.location.pathname;
-        if (path === "/admin") {
+        if (path === "/lianglab/admin") {
             if (!isAdminMode) enterAdmin();
         } else {
             if (isAdminMode) setAdminMode(false);
