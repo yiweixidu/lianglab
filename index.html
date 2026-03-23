@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== 完整样式（与之前一致） ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --blue-deep: #0072BB;
@@ -121,6 +120,41 @@
             gap: 2rem;
             margin-top: 1.5rem;
         }
+        /* Alumni 列表样式（新增） */
+        .alumni-list {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid var(--border-light);
+            margin-top: 1.5rem;
+        }
+        .alumni-list-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.2s;
+        }
+        .alumni-list-item:hover {
+            background: #fafcff;
+        }
+        .alumni-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--blue-deep);
+        }
+        .alumni-role {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        @media (max-width: 640px) {
+            .alumni-list-item {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+        }
+        /* 原有卡片样式保留 */
         .member-card, .alumni-card, .event-card, .community-card {
             background: #ffffff;
             border-radius: 24px;
@@ -449,7 +483,7 @@
         ]
     };
 
-    // ==================== Supabase 操作函数 ====================
+    // ==================== Supabase 操作函数（支持删除） ====================
     async function syncTable(tableName, dataArray) {
         if (!isAdminMode) return false;
         
@@ -460,7 +494,31 @@
             return false;
         }
 
-        // 分离有 id 和无 id 的记录
+        // 1. 获取数据库中所有记录的 ID
+        const { data: existingRecords, error: fetchError } = await supabaseClient.from(tableName).select('id');
+        if (fetchError) {
+            console.error(`Failed to fetch existing ${tableName}:`, fetchError);
+            alert(`Failed to fetch existing records: ${fetchError.message}`);
+            return false;
+        }
+        const existingIds = existingRecords.map(r => r.id);
+
+        // 2. 计算需要删除的 ID（在数据库中存在，但不在 dataArray 中）
+        const localIds = dataArray.filter(item => item.id && typeof item.id === 'number' && item.id > 0).map(item => item.id);
+        const idsToDelete = existingIds.filter(id => !localIds.includes(id));
+
+        // 3. 执行删除
+        if (idsToDelete.length > 0) {
+            const { error: deleteError } = await supabaseClient.from(tableName).delete().in('id', idsToDelete);
+            if (deleteError) {
+                console.error(`Error deleting from ${tableName}:`, deleteError);
+                alert(`Failed to delete records: ${deleteError.message}`);
+                return false;
+            }
+            console.log(`Deleted ${idsToDelete.length} records from ${tableName}`);
+        }
+
+        // 4. 分离有 id 和无 id 的记录
         const recordsWithId = [];
         const recordsWithoutId = [];
         dataArray.forEach((item, idx) => {
@@ -473,7 +531,7 @@
             }
         });
 
-        // 1. 处理有 id 的记录（更新）
+        // 5. 更新已有记录
         let updateError = null;
         if (recordsWithId.length > 0) {
             const { error } = await supabaseClient.from(tableName).upsert(recordsWithId, { onConflict: 'id' });
@@ -484,7 +542,7 @@
             }
         }
 
-        // 2. 处理无 id 的记录（插入）
+        // 6. 插入新记录
         let insertedData = [];
         let insertError = null;
         if (recordsWithoutId.length > 0 && !updateError) {
@@ -498,29 +556,21 @@
             }
         }
 
-        // 3. 如果任何操作失败，返回 false
         if (updateError || insertError) return false;
 
-        // 4. 合并插入的新记录（带 id）到本地数组中
+        // 7. 更新本地数组中新记录的 id
         if (insertedData.length > 0) {
-            // 获取本地数组中无 id 记录的索引位置
             let insertIndex = 0;
             const newArray = dataArray.map(item => {
                 if (item.id && typeof item.id === 'number' && item.id > 0) {
-                    return item; // 保持有 id 的记录不变
+                    return item;
                 } else {
-                    // 替换为插入后返回的记录（包含数据库生成的 id）
                     return insertedData[insertIndex++];
                 }
             });
-            // 更新 db 数组
             db[tableName] = newArray;
-            // 返回 true 并让调用方决定是否刷新
-            console.log(`${tableName} synced with new IDs`);
-            return true;
         }
 
-        // 只有更新操作时，无需修改 db 数组，因为数组中的 id 本来就是正确的
         console.log(`${tableName} synced`);
         return true;
     }
@@ -547,14 +597,12 @@
     async function refreshAfterChange(tableName) {
         const { data, error } = await supabaseClient.from(tableName).select('*').order('sort_order', { ascending: true });
         if (!error && data) {
-            // 确保 id 是数字，过滤掉可能的 null（实际上不应该有）
             db[tableName] = data.map(item => ({ ...item, id: Number(item.id) })).filter(item => !isNaN(item.id) && item.id > 0);
         }
         if (!isAdminMode) renderPublicPage(currentPage);
         else renderAdminTab(currentAdminTab);
     }
 
-    // 全局函数：为事件媒体容器绑定删除按钮事件
     function attachRemoveFormEvents(cont) {
         cont.querySelectorAll('.removeMediaBtnForm').forEach(btn => {
             btn.onclick = () => btn.closest('.media-group').remove();
@@ -643,9 +691,15 @@
             membersHtml += `</div>`;
             html = membersHtml;
         } else if (page === "alumni") {
-            let alumniHtml = `<h2 class="section-title">${t.alumni_title}</h2><div class="alumni-grid">`;
+            // 新样式：垂直列表
+            let alumniHtml = `<h2 class="section-title">${t.alumni_title}</h2><div class="alumni-list">`;
             db.alumni.forEach(a => {
-                alumniHtml += `<div class="alumni-card"><div class="member-name">${a.name}</div><div class="member-title">${a.role}</div></div>`;
+                alumniHtml += `
+                    <div class="alumni-list-item">
+                        <div class="alumni-name">${a.name}</div>
+                        <div class="alumni-role">${a.role}</div>
+                    </div>
+                `;
             });
             alumniHtml += `</div>`;
             html = alumniHtml;
@@ -1160,14 +1214,13 @@
         const bio = document.getElementById("memBio").value;
         const photo = document.getElementById("memPhoto").value;
         if (name && title) {
-            // 推送无 id 的新记录
             db.members.push({ name, title, bio, photo });
             const success = await syncTable('members', db.members);
             if (success) {
                 refreshAdminLists('members');
                 document.getElementById("adminMemberForm").reset();
             } else {
-                db.members.pop(); // 回滚
+                db.members.pop();
                 alert("Failed to add member. Please check console.");
             }
         } else {
@@ -1226,13 +1279,11 @@
             if (url) media.push({ type, url });
         });
         if (date && title && location) {
-            // 推送无 id 的新事件
             db.events.push({ date, title, description, location, media });
             const success = await syncTable('events', db.events);
             if (success) {
                 refreshAdminLists('events');
                 document.getElementById("adminEventForm").reset();
-                // 重置媒体容器
                 const container = document.getElementById("eventMediaContainer");
                 container.innerHTML = `<div class="media-group" data-media-index="0">
                     <div class="media-row">
@@ -1243,7 +1294,7 @@
                 </div>`;
                 attachRemoveFormEvents(container);
             } else {
-                db.events.pop(); // 回滚
+                db.events.pop();
                 alert("Failed to add event. Please check console.");
             }
         } else {
