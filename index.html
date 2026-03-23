@@ -1445,9 +1445,25 @@
     document.getElementById("langFrFooter").addEventListener("click", () => setLanguage("fr"));
 
     function handleInitialRoute() {
-        const path = window.location.pathname;
-        if (path === "/admin") enterAdmin();
-        else navigateTo(path, false);
+        // 检查是否有 path 参数（来自 404.html 重定向）
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectPath = urlParams.get('path');
+        
+        let targetPath;
+        if (redirectPath) {
+            // 从 404 重定向过来的，使用保存的路径
+            targetPath = redirectPath;
+            // 清除 URL 中的参数，避免一直带着
+            window.history.replaceState({}, '', targetPath);
+        } else {
+            targetPath = window.location.pathname;
+        }
+        
+        if (targetPath === "/admin") {
+            enterAdmin();
+        } else {
+            navigateTo(targetPath, false);
+        }
     }
 
     window.addEventListener("popstate", () => {

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <script>
+        // 将当前路径保存到查询参数，然后跳转到首页
+        const redirectPath = window.location.pathname + window.location.search + window.location.hash;
+        window.location.href = '/?path=' + encodeURIComponent(redirectPath);
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>
