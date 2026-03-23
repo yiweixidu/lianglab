@@ -445,7 +445,7 @@
     // ==================== Supabase 操作函数 ====================
     async function syncTable(tableName, dataArray) {
         if (!isAdminMode) return;
-
+        
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) {
             setAdminMode(false);
@@ -453,29 +453,25 @@
             return;
         }
 
-        // 使用解构分离 id，确保无效 id 不会被加入新对象
-        const cleaned = dataArray.map((item, idx) => {
-            const { id, ...rest } = item;        // 将原对象的 id 分离出来
-            const newItem = { ...rest, sort_order: idx };  // 新对象不包含 id
-            // 只有当 id 是正整数时才添加回新对象
-            if (typeof id === 'number' && Number.isInteger(id) && id > 0) {
+        // 为每条记录附加 sort_order，并只保留有效的 id（正整数）
+        const updated = dataArray.map((item, idx) => {
+            const { id, ...rest } = item;  // 提取 id，其余字段放入 rest
+            const newItem = { ...rest, sort_order: idx };
+            // 只有当 id 存在且是正整数时才保留
+            if (id && typeof id === 'number' && id > 0) {
                 newItem.id = id;
             }
             return newItem;
         });
 
-        console.log(`Syncing ${tableName} (${cleaned.length} items):`, cleaned.map(i => ({
-            ...i,
-            id: i.id !== undefined ? i.id : 'NEW'
-        })));
+        console.log(`Syncing ${tableName}:`, updated);
 
-        const { error } = await supabaseClient.from(tableName).upsert(cleaned, { onConflict: 'id' });
+        const { error } = await supabaseClient.from(tableName).upsert(updated, { onConflict: 'id' });
         if (error) {
             console.error(`Error syncing ${tableName}:`, error);
             alert(`Failed to sync ${tableName}: ${error.message}`);
         } else {
             console.log(`${tableName} synced`);
-            await refreshAfterChange(tableName);
         }
     }
 
