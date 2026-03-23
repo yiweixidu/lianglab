@@ -1029,16 +1029,18 @@
         const authors = document.getElementById("pubAuthors").value;
         const journal = document.getElementById("pubJournal").value;
         if (year && title && authors && journal) {
-            // 推送新记录（无 id）
-            db.publications.push({ year, title, authors, journal });
-            // 同步到 Supabase
-            await syncTable('publications', db.publications);
-            // 关键：从数据库重新加载最新数据，覆盖本地数组，确保每条记录都有正确的 id
-            await refreshAfterChange('publications');
-            // 刷新管理面板
-            refreshAdminLists('publications');
-            // 清空表单
-            document.getElementById("adminPubForm").reset();
+            const newItem = { year, title, authors, journal, sort_order: db.publications.length };
+            // 直接插入数据库
+            const { error } = await supabaseClient.from('publications').insert(newItem);
+            if (error) {
+                alert(`Insert failed: ${error.message}`);
+                console.error(error);
+            } else {
+                // 插入成功后，重新从数据库加载整个表
+                await refreshAfterChange('publications');
+                refreshAdminLists('publications');
+                document.getElementById("adminPubForm").reset();
+            }
         } else {
             alert("Please fill all fields");
         }
