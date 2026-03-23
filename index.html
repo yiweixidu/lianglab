@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* ========== 完整样式（与之前一致） ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --blue-deep: #0072BB;
@@ -151,6 +152,29 @@
             margin-bottom: 12px;
             border: 2px solid var(--gold-accent);
         }
+        .event-media {
+            margin-top: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .event-media-item {
+            width: calc(50% - 4px);
+            max-width: 120px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+        .event-media-item img, .event-media-item video {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .event-media-item img:hover, .event-media-item video:hover {
+            transform: scale(1.02);
+        }
         .pub-item { border-bottom: 1px solid var(--border-light); padding: 1rem 0; }
         .pub-title { font-weight: 700; }
         .pub-authors, .pub-journal { font-size: 0.85rem; color: var(--text-muted); }
@@ -229,6 +253,30 @@
             border: 1px solid var(--border-light);
             border-radius: 16px;
         }
+        .media-group {
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: white;
+        }
+        .media-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .media-row select, .media-row input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .media-row button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--orange-accent);
+        }
         .data-list { margin-top: 2rem; }
         .data-item {
             display: flex;
@@ -247,19 +295,30 @@
             opacity: 0.4;
             cursor: grabbing;
         }
-        .data-item .drag-handle {
-            margin-right: 12px;
-            color: #888;
-            font-size: 1rem;
-            cursor: grab;
+        .data-actions {
+            display: flex;
+            gap: 8px;
         }
-        .delete-btn {
+        .edit-btn, .delete-btn {
             background: none;
             border: none;
-            color: #e18335;
             cursor: pointer;
             font-size: 0.8rem;
-            margin-left: 12px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            transition: 0.2s;
+        }
+        .edit-btn {
+            color: var(--blue-bright);
+        }
+        .edit-btn:hover {
+            background: rgba(30,145,214,0.1);
+        }
+        .delete-btn {
+            color: var(--orange-accent);
+        }
+        .delete-btn:hover {
+            background: rgba(225,131,53,0.1);
         }
         .modal {
             position: fixed;
@@ -277,8 +336,10 @@
             background: white;
             padding: 2rem;
             border-radius: 28px;
-            max-width: 400px;
+            max-width: 600px;
             width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         @media (max-width: 780px) {
             .header-container { flex-direction: column; gap: 1rem; }
@@ -297,7 +358,6 @@
                 <p>McGill University · Lady Davis Institute</p>
             </a>
         </div>
-        <!-- 普通导航栏（无 admin 按钮） -->
         <ul class="nav-links" id="publicNav">
             <li><a href="/research">Research</a></li>
             <li><a href="/publications">Publications</a></li>
@@ -307,7 +367,6 @@
             <li><a href="/events">Events</a></li>
             <li><a href="/contact">Contact</a></li>
         </ul>
-        <!-- 管理导航栏（初始隐藏） -->
         <div class="admin-nav-bar" id="adminNavBar">
             <a href="#" data-admin-tab="publications">Manage Publications</a>
             <a href="#" data-admin-tab="members">Manage Members</a>
@@ -334,9 +393,24 @@
     </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // ==================== 数据模型 (localStorage) ====================
+    // ==================== Supabase 客户端初始化 ====================
+    const SUPABASE_URL = 'https://qaynyeomzszpmqobgewb.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_ZacaDIRtrmFo8EIyRafKVQ_VUqRhinO';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ==================== 数据模型 ====================
     let db = {
+        publications: [],
+        members: [],
+        alumni: [],
+        community: [],
+        events: []
+    };
+
+    // 初始数据（示例内容）
+    const initialData = {
         publications: [
             { year: 2023, title: "Anthracyclines inhibit SARS-CoV-2 infection", authors: "Wang Z, Pan Q, Ma L, et al.", journal: "Virus Research" },
             { year: 2016, title: "CRISPR/Cas9-Derived Mutations Both Inhibit HIV-1 Replication and Accelerate Viral Escape", authors: "Wang Z, Pan Q, Gendron P, et al.", journal: "Cell Reports" },
@@ -363,14 +437,47 @@
             { date: "2023-09", type: "video", content: "Nature Podcast interview on interferon antagonism.", link: "https://youtu.be/example" }
         ],
         events: [
-            { date: "2026-05-15", title: "International Symposium on Viral Pathogenesis", description: "Keynote by Dr. Liang.", location: "Montreal, Canada", photo: "" },
-            { date: "2026-09-10", title: "CRISPR & HIV Cure Workshop", description: "Hands-on training", location: "McGill University", photo: "" }
+            { date: "2026-05-15", title: "International Symposium on Viral Pathogenesis", description: "Keynote by Dr. Liang.", location: "Montreal, Canada", media: [{type:"image", url:"https://picsum.photos/id/1/200/150"},{type:"video", url:"https://www.w3schools.com/html/mov_bbb.mp4"}] },
+            { date: "2026-09-10", title: "CRISPR & HIV Cure Workshop", description: "Hands-on training", location: "McGill University", media: [{type:"image", url:"https://picsum.photos/id/2/200/150"}] }
         ]
     };
 
-    function loadData() { const saved = localStorage.getItem("lianglab_db"); if (saved) db = JSON.parse(saved); else saveData(); }
-    function saveData() { localStorage.setItem("lianglab_db", JSON.stringify(db)); }
+    // ==================== Supabase 操作函数 ====================
+    async function syncTable(tableName, dataArray) {
+        if (!isAdminMode) return;
+        const updated = dataArray.map((item, idx) => ({ ...item, sort_order: idx }));
+        const { error } = await supabaseClient.from(tableName).upsert(updated, { onConflict: 'id' });
+        if (error) console.error(`Error syncing ${tableName}:`, error);
+        else console.log(`${tableName} synced`);
+    }
 
+    async function loadData() {
+        const tables = ['publications', 'members', 'alumni', 'community', 'events'];
+        for (const table of tables) {
+            const { data, error } = await supabaseClient.from(table).select('*').order('sort_order', { ascending: true });
+            if (error) {
+                console.error(`Failed to load ${table}:`, error);
+                continue;
+            }
+            if (data && data.length > 0) {
+                db[table] = data;
+            } else {
+                db[table] = initialData[table].map((item, idx) => ({ ...item, sort_order: idx }));
+                console.log(`${table} table is empty, using local initial data. Use "Initialize" button in admin panel to save.`);
+            }
+        }
+        renderPublicPage(currentPage);
+        if (isAdminMode) renderAdminTab(currentAdminTab);
+    }
+
+    async function refreshAfterChange(tableName) {
+        const { data, error } = await supabaseClient.from(tableName).select('*').order('sort_order', { ascending: true });
+        if (!error && data) db[tableName] = data;
+        if (!isAdminMode) renderPublicPage(currentPage);
+        else renderAdminTab(currentAdminTab);
+    }
+
+    // ==================== 渲染公共页面 ====================
     const strings = {
         en: {
             home_title: "Chen Liang Lab",
@@ -412,68 +519,6 @@
     let currentAdminTab = "publications";
     let isAdminMode = false;
 
-    // 拖拽排序全局变量
-    let dragSourceIndex = null;
-    let dragSourceList = null;
-    let dragTargetElement = null;
-
-    // 通用拖拽排序初始化 (为某个列表容器绑定事件)
-    function initDragSort(containerId, dataArrayKey, refreshCallback) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        
-        // 使用事件委托，因为列表项可能会被重新渲染
-        container.addEventListener('dragstart', (e) => {
-            const item = e.target.closest('.data-item');
-            if (!item) return;
-            dragSourceIndex = parseInt(item.getAttribute('data-index'));
-            dragSourceList = dataArrayKey;
-            e.dataTransfer.setData('text/plain', dragSourceIndex);
-            e.dataTransfer.effectAllowed = 'move';
-            item.classList.add('dragging');
-        });
-        
-        container.addEventListener('dragend', (e) => {
-            const item = e.target.closest('.data-item');
-            if (item) item.classList.remove('dragging');
-            dragSourceIndex = null;
-            dragSourceList = null;
-        });
-        
-        container.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        });
-        
-        container.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const targetItem = e.target.closest('.data-item');
-            if (!targetItem) return;
-            const targetIndex = parseInt(targetItem.getAttribute('data-index'));
-            if (dragSourceIndex !== null && dragSourceList === dataArrayKey && dragSourceIndex !== targetIndex) {
-                // 移动数组元素
-                const arr = db[dataArrayKey];
-                const [moved] = arr.splice(dragSourceIndex, 1);
-                arr.splice(targetIndex, 0, moved);
-                saveData();
-                refreshCallback();  // 重新渲染列表
-                // 刷新公共页面显示（如果当前普通页面是相关页面）
-                if (!isAdminMode && (currentPage === dataArrayKey || 
-                    (dataArrayKey === 'publications' && currentPage === 'publications') ||
-                    (dataArrayKey === 'members' && currentPage === 'members') ||
-                    (dataArrayKey === 'alumni' && currentPage === 'alumni') ||
-                    (dataArrayKey === 'community' && currentPage === 'community') ||
-                    (dataArrayKey === 'events' && currentPage === 'events'))) {
-                    renderPublicPage(currentPage);
-                } else if (isAdminMode && currentAdminTab === dataArrayKey.slice(0,-1)) {
-                    // 如果当前管理页面是同一个，重新渲染管理标签页以更新列表
-                    renderAdminTab(currentAdminTab);
-                }
-            }
-        });
-    }
-
-    // 渲染普通页面
     function renderPublicPage(page) {
         const container = document.getElementById("public-container");
         if (!container) return;
@@ -530,7 +575,19 @@
         } else if (page === "events") {
             let eventsHtml = `<h2 class="section-title">${t.events_title}</h2><div class="events-grid">`;
             db.events.forEach(e => {
-                eventsHtml += `<div class="event-card"><div class="event-date">${e.date}</div><div class="event-title">${e.title}</div><p>${e.description}</p><p><i class="fas fa-map-marker-alt"></i> ${e.location}</p></div>`;
+                eventsHtml += `<div class="event-card"><div class="event-date">${e.date}</div><div class="event-title">${e.title}</div><p>${e.description}</p><p><i class="fas fa-map-marker-alt"></i> ${e.location}</p>`;
+                if (e.media && e.media.length) {
+                    eventsHtml += `<div class="event-media">`;
+                    e.media.forEach(m => {
+                        if (m.type === 'image') {
+                            eventsHtml += `<div class="event-media-item"><img src="${m.url}" alt="event media" loading="lazy"></div>`;
+                        } else if (m.type === 'video') {
+                            eventsHtml += `<div class="event-media-item"><video controls><source src="${m.url}" type="video/mp4">Your browser does not support the video tag.</video></div>`;
+                        }
+                    });
+                    eventsHtml += `</div>`;
+                }
+                eventsHtml += `</div>`;
             });
             eventsHtml += `</div>`;
             html = eventsHtml;
@@ -540,13 +597,201 @@
         container.innerHTML = html;
     }
 
-    // 管理面板渲染
+    // ==================== 拖拽排序 ====================
+    let dragSourceIndex = null;
+    let dragSourceList = null;
+
+    function initDragSort(containerId, dataArrayKey, refreshCallback) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.addEventListener('dragstart', (e) => {
+            const item = e.target.closest('.data-item');
+            if (!item) return;
+            dragSourceIndex = parseInt(item.getAttribute('data-index'));
+            dragSourceList = dataArrayKey;
+            e.dataTransfer.setData('text/plain', dragSourceIndex);
+            e.dataTransfer.effectAllowed = 'move';
+            item.classList.add('dragging');
+        });
+        container.addEventListener('dragend', (e) => {
+            const item = e.target.closest('.data-item');
+            if (item) item.classList.remove('dragging');
+            dragSourceIndex = null;
+            dragSourceList = null;
+        });
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        container.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            const targetItem = e.target.closest('.data-item');
+            if (!targetItem) return;
+            const targetIndex = parseInt(targetItem.getAttribute('data-index'));
+            if (dragSourceIndex !== null && dragSourceList === dataArrayKey && dragSourceIndex !== targetIndex) {
+                const arr = db[dataArrayKey];
+                const [moved] = arr.splice(dragSourceIndex, 1);
+                arr.splice(targetIndex, 0, moved);
+                await syncTable(dataArrayKey, arr);
+                await refreshAfterChange(dataArrayKey);
+                refreshCallback();
+            }
+        });
+    }
+
+    // ==================== 编辑模态框 ====================
+    function showEditModal(dataType, index) {
+        const item = db[dataType][index];
+        if (!item) return;
+        let fieldsHtml = '';
+        if (dataType === 'publications') {
+            fieldsHtml = `
+                <label>Year</label><input type="number" id="editYear" value="${item.year}" required>
+                <label>Title</label><input type="text" id="editTitle" value="${item.title.replace(/"/g, '&quot;')}" required>
+                <label>Authors</label><input type="text" id="editAuthors" value="${item.authors.replace(/"/g, '&quot;')}" required>
+                <label>Journal</label><input type="text" id="editJournal" value="${item.journal.replace(/"/g, '&quot;')}" required>
+            `;
+        } else if (dataType === 'members') {
+            fieldsHtml = `
+                <label>Name</label><input type="text" id="editName" value="${item.name.replace(/"/g, '&quot;')}" required>
+                <label>Title</label><input type="text" id="editTitle" value="${item.title.replace(/"/g, '&quot;')}" required>
+                <label>Bio</label><textarea id="editBio">${item.bio}</textarea>
+                <label>Photo URL</label><input type="text" id="editPhoto" value="${item.photo || ''}">
+            `;
+        } else if (dataType === 'alumni') {
+            fieldsHtml = `
+                <label>Name</label><input type="text" id="editName" value="${item.name.replace(/"/g, '&quot;')}" required>
+                <label>Role / Current position</label><input type="text" id="editRole" value="${item.role.replace(/"/g, '&quot;')}" required>
+            `;
+        } else if (dataType === 'community') {
+            fieldsHtml = `
+                <label>Date (YYYY-MM)</label><input type="text" id="editDate" value="${item.date}" required>
+                <label>Type</label><select id="editType"><option value="news" ${item.type === 'news' ? 'selected' : ''}>News</option><option value="video" ${item.type === 'video' ? 'selected' : ''}>Video</option></select>
+                <label>Content</label><textarea id="editContent" required>${item.content}</textarea>
+                <label>Link (optional)</label><input type="text" id="editLink" value="${item.link || ''}">
+            `;
+        } else if (dataType === 'events') {
+            let mediaHtml = '<div id="editMediaContainer">';
+            item.media.forEach((m, idx) => {
+                mediaHtml += `
+                    <div class="media-group" data-media-index="${idx}">
+                        <div class="media-row">
+                            <select class="editMediaType">
+                                <option value="image" ${m.type === 'image' ? 'selected' : ''}>Image</option>
+                                <option value="video" ${m.type === 'video' ? 'selected' : ''}>Video</option>
+                            </select>
+                            <input type="text" class="editMediaUrl" value="${m.url}" placeholder="URL">
+                            <button type="button" class="removeMediaBtn" data-idx="${idx}"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            mediaHtml += '</div><button type="button" id="addMediaBtn" class="admin-btn" style="margin-top:8px;">+ Add Media</button>';
+            fieldsHtml = `
+                <label>Date (YYYY-MM-DD)</label><input type="text" id="editDate" value="${item.date}" required>
+                <label>Title</label><input type="text" id="editTitle" value="${item.title.replace(/"/g, '&quot;')}" required>
+                <label>Description</label><textarea id="editDesc">${item.description}</textarea>
+                <label>Location</label><input type="text" id="editLocation" value="${item.location.replace(/"/g, '&quot;')}" required>
+                <label>Media (images/videos)</label>
+                <div id="mediaEditor">${mediaHtml}</div>
+            `;
+        }
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal';
+        modalDiv.innerHTML = `
+            <div class="modal-content">
+                <h3>Edit ${dataType.slice(0, -1)}</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">${fieldsHtml}</div>
+                <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button id="saveEditBtn" class="admin-btn">Save</button>
+                    <button id="cancelEditBtn">Cancel</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+
+        if (dataType === 'events') {
+            const mediaContainer = modalDiv.querySelector('#mediaEditor');
+            const addBtn = modalDiv.querySelector('#addMediaBtn');
+            addBtn.onclick = () => {
+                const newGroup = document.createElement('div');
+                newGroup.className = 'media-group';
+                newGroup.innerHTML = `
+                    <div class="media-row">
+                        <select class="editMediaType">
+                            <option value="image">Image</option>
+                            <option value="video">Video</option>
+                        </select>
+                        <input type="text" class="editMediaUrl" placeholder="URL">
+                        <button type="button" class="removeMediaBtn"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                mediaContainer.appendChild(newGroup);
+                attachRemoveEvents(mediaContainer);
+            };
+            function attachRemoveEvents(container) {
+                container.querySelectorAll('.removeMediaBtn').forEach(btn => {
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        btn.closest('.media-group').remove();
+                    };
+                });
+            }
+            attachRemoveEvents(mediaContainer);
+        }
+
+        const saveBtn = modalDiv.querySelector('#saveEditBtn');
+        const cancelBtn = modalDiv.querySelector('#cancelEditBtn');
+        saveBtn.onclick = async () => {
+            if (dataType === 'publications') {
+                item.year = parseInt(modalDiv.querySelector('#editYear').value);
+                item.title = modalDiv.querySelector('#editTitle').value;
+                item.authors = modalDiv.querySelector('#editAuthors').value;
+                item.journal = modalDiv.querySelector('#editJournal').value;
+            } else if (dataType === 'members') {
+                item.name = modalDiv.querySelector('#editName').value;
+                item.title = modalDiv.querySelector('#editTitle').value;
+                item.bio = modalDiv.querySelector('#editBio').value;
+                item.photo = modalDiv.querySelector('#editPhoto').value;
+            } else if (dataType === 'alumni') {
+                item.name = modalDiv.querySelector('#editName').value;
+                item.role = modalDiv.querySelector('#editRole').value;
+            } else if (dataType === 'community') {
+                item.date = modalDiv.querySelector('#editDate').value;
+                item.type = modalDiv.querySelector('#editType').value;
+                item.content = modalDiv.querySelector('#editContent').value;
+                item.link = modalDiv.querySelector('#editLink').value;
+            } else if (dataType === 'events') {
+                item.date = modalDiv.querySelector('#editDate').value;
+                item.title = modalDiv.querySelector('#editTitle').value;
+                item.description = modalDiv.querySelector('#editDesc').value;
+                item.location = modalDiv.querySelector('#editLocation').value;
+                const mediaGroups = modalDiv.querySelectorAll('.media-group');
+                const newMedia = [];
+                mediaGroups.forEach(group => {
+                    const type = group.querySelector('.editMediaType').value;
+                    const url = group.querySelector('.editMediaUrl').value.trim();
+                    if (url) newMedia.push({ type, url });
+                });
+                item.media = newMedia;
+            }
+            await syncTable(dataType, db[dataType]);
+            await refreshAfterChange(dataType);
+            modalDiv.remove();
+            if (isAdminMode) refreshAdminLists(currentAdminTab);
+            else renderPublicPage(currentPage);
+        };
+        cancelBtn.onclick = () => modalDiv.remove();
+    }
+
+    // ==================== 管理面板 ====================
     function renderAdminTab(tab) {
         const container = document.getElementById("admin-container");
         if (!container) return;
         let html = `<div class="admin-panel">`;
         if (tab === "publications") {
             html += `<h3>Manage Publications (drag to reorder)</h3>
+                <button id="initPubBtn" class="admin-btn" style="margin-bottom:12px;">📌 Initialize Publications (save to Supabase)</button>
                 <form id="adminPubForm" class="admin-form">
                     <input type="text" id="pubYear" placeholder="Year" required>
                     <input type="text" id="pubTitle" placeholder="Title" required>
@@ -557,6 +802,7 @@
                 <div class="data-list" id="pubList"></div>`;
         } else if (tab === "members") {
             html += `<h3>Manage Members (drag to reorder)</h3>
+                <button id="initMemberBtn" class="admin-btn" style="margin-bottom:12px;">📌 Initialize Members (save to Supabase)</button>
                 <form id="adminMemberForm" class="admin-form">
                     <input type="text" id="memName" placeholder="Name" required>
                     <input type="text" id="memTitle" placeholder="Title" required>
@@ -567,6 +813,7 @@
                 <div class="data-list" id="memberList"></div>`;
         } else if (tab === "alumni") {
             html += `<h3>Manage Alumni (drag to reorder)</h3>
+                <button id="initAlumniBtn" class="admin-btn" style="margin-bottom:12px;">📌 Initialize Alumni (save to Supabase)</button>
                 <form id="adminAlumniForm" class="admin-form">
                     <input type="text" id="alumName" placeholder="Name" required>
                     <input type="text" id="alumRole" placeholder="Role / Current position" required>
@@ -575,6 +822,7 @@
                 <div class="data-list" id="alumniList"></div>`;
         } else if (tab === "community") {
             html += `<h3>Manage Community / News (drag to reorder)</h3>
+                <button id="initCommunityBtn" class="admin-btn" style="margin-bottom:12px;">📌 Initialize Community (save to Supabase)</button>
                 <form id="adminCommunityForm" class="admin-form">
                     <input type="text" id="commDate" placeholder="Date (YYYY-MM)" required>
                     <select id="commType">
@@ -587,13 +835,26 @@
                 </form>
                 <div class="data-list" id="communityList"></div>`;
         } else if (tab === "events") {
-            html += `<h3>Manage Events (drag to reorder)</h3>
+            html += `<h3>Manage Events (drag to reorder) — each event can have multiple images/videos</h3>
+                <button id="initEventsBtn" class="admin-btn" style="margin-bottom:12px;">📌 Initialize Events (save to Supabase)</button>
                 <form id="adminEventForm" class="admin-form">
                     <input type="text" id="eventDate" placeholder="Date (YYYY-MM-DD)" required>
                     <input type="text" id="eventTitle" placeholder="Title" required>
                     <textarea id="eventDesc" placeholder="Description"></textarea>
                     <input type="text" id="eventLoc" placeholder="Location" required>
-                    <input type="text" id="eventPhoto" placeholder="Photo URL (optional)">
+                    <div id="eventMediaContainer">
+                        <div class="media-group" data-media-index="0">
+                            <div class="media-row">
+                                <select class="eventMediaType">
+                                    <option value="image">Image</option>
+                                    <option value="video">Video</option>
+                                </select>
+                                <input type="text" class="eventMediaUrl" placeholder="URL">
+                                <button type="button" class="removeMediaBtnForm"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="addMediaFormBtn" class="admin-btn" style="margin-bottom:12px;">+ Add Media</button>
                     <button type="submit" class="admin-btn">Add Event</button>
                 </form>
                 <div class="data-list" id="eventList"></div>`;
@@ -601,71 +862,277 @@
         html += `</div>`;
         container.innerHTML = html;
         refreshAdminLists(tab);
-        
-        if (tab === "publications") document.getElementById("adminPubForm").onsubmit = (e) => { e.preventDefault(); addPublicationAdmin(); };
-        else if (tab === "members") document.getElementById("adminMemberForm").onsubmit = (e) => { e.preventDefault(); addMemberAdmin(); };
-        else if (tab === "alumni") document.getElementById("adminAlumniForm").onsubmit = (e) => { e.preventDefault(); addAlumniAdmin(); };
-        else if (tab === "community") document.getElementById("adminCommunityForm").onsubmit = (e) => { e.preventDefault(); addCommunityAdmin(); };
-        else if (tab === "events") document.getElementById("adminEventForm").onsubmit = (e) => { e.preventDefault(); addEventAdmin(); };
+
+        if (tab === "publications") {
+            document.getElementById("initPubBtn").onclick = async () => {
+                await syncTable('publications', db.publications);
+                alert('Publications initialized to Supabase');
+                refreshAdminLists('publications');
+            };
+            document.getElementById("adminPubForm").onsubmit = async (e) => { e.preventDefault(); await addPublicationAdmin(); };
+        } else if (tab === "members") {
+            document.getElementById("initMemberBtn").onclick = async () => {
+                await syncTable('members', db.members);
+                alert('Members initialized to Supabase');
+                refreshAdminLists('members');
+            };
+            document.getElementById("adminMemberForm").onsubmit = async (e) => { e.preventDefault(); await addMemberAdmin(); };
+        } else if (tab === "alumni") {
+            document.getElementById("initAlumniBtn").onclick = async () => {
+                await syncTable('alumni', db.alumni);
+                alert('Alumni initialized to Supabase');
+                refreshAdminLists('alumni');
+            };
+            document.getElementById("adminAlumniForm").onsubmit = async (e) => { e.preventDefault(); await addAlumniAdmin(); };
+        } else if (tab === "community") {
+            document.getElementById("initCommunityBtn").onclick = async () => {
+                await syncTable('community', db.community);
+                alert('Community items initialized to Supabase');
+                refreshAdminLists('community');
+            };
+            document.getElementById("adminCommunityForm").onsubmit = async (e) => { e.preventDefault(); await addCommunityAdmin(); };
+        } else if (tab === "events") {
+            document.getElementById("initEventsBtn").onclick = async () => {
+                await syncTable('events', db.events);
+                alert('Events initialized to Supabase');
+                refreshAdminLists('events');
+            };
+            document.getElementById("adminEventForm").onsubmit = async (e) => { e.preventDefault(); await addEventAdmin(); };
+            const addMediaBtn = document.getElementById("addMediaFormBtn");
+            const container = document.getElementById("eventMediaContainer");
+            addMediaBtn.onclick = () => {
+                const newGroup = document.createElement('div');
+                newGroup.className = 'media-group';
+                newGroup.innerHTML = `
+                    <div class="media-row">
+                        <select class="eventMediaType">
+                            <option value="image">Image</option>
+                            <option value="video">Video</option>
+                        </select>
+                        <input type="text" class="eventMediaUrl" placeholder="URL">
+                        <button type="button" class="removeMediaBtnForm"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(newGroup);
+                attachRemoveFormEvents(container);
+            };
+            function attachRemoveFormEvents(cont) {
+                cont.querySelectorAll('.removeMediaBtnForm').forEach(btn => {
+                    btn.onclick = () => btn.closest('.media-group').remove();
+                });
+            }
+            attachRemoveFormEvents(container);
+        }
     }
-    
+
     function refreshAdminLists(tab) {
         if (tab === "publications") {
             const listDiv = document.getElementById("pubList");
-            if (listDiv) listDiv.innerHTML = db.publications.map((p,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>${p.year}</strong> ${p.title}<br><small>${p.authors} — ${p.journal}</small></span><button class="delete-btn" onclick="deletePub(${i})">Delete</button></div>`).join("");
-            initDragSort('pubList', 'publications', () => refreshAdminLists('publications'));
+            if (listDiv) {
+                listDiv.innerHTML = db.publications.map((p,i)=>`
+                    <div class="data-item" draggable="true" data-index="${i}">
+                        <span><strong>${p.year}</strong> ${p.title}<br><small>${p.authors} — ${p.journal}</small></span>
+                        <div class="data-actions">
+                            <button class="edit-btn" onclick="editPublication(${i})">Edit</button>
+                            <button class="delete-btn" onclick="deletePub(${i})">Delete</button>
+                        </div>
+                    </div>`).join("");
+                initDragSort('pubList', 'publications', () => refreshAdminLists('publications'));
+            }
         } else if (tab === "members") {
             const listDiv = document.getElementById("memberList");
-            if (listDiv) listDiv.innerHTML = db.members.map((m,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>${m.name}</strong> (${m.title})<br><small>${m.bio.substring(0,80)}</small></span><button class="delete-btn" onclick="deleteMember(${i})">Delete</button></div>`).join("");
-            initDragSort('memberList', 'members', () => refreshAdminLists('members'));
+            if (listDiv) {
+                listDiv.innerHTML = db.members.map((m,i)=>`
+                    <div class="data-item" draggable="true" data-index="${i}">
+                        <span><strong>${m.name}</strong> (${m.title})<br><small>${m.bio.substring(0,80)}</small></span>
+                        <div class="data-actions">
+                            <button class="edit-btn" onclick="editMember(${i})">Edit</button>
+                            <button class="delete-btn" onclick="deleteMember(${i})">Delete</button>
+                        </div>
+                    </div>`).join("");
+                initDragSort('memberList', 'members', () => refreshAdminLists('members'));
+            }
         } else if (tab === "alumni") {
             const listDiv = document.getElementById("alumniList");
-            if (listDiv) listDiv.innerHTML = db.alumni.map((a,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>${a.name}</strong> — ${a.role}</span><button class="delete-btn" onclick="deleteAlumni(${i})">Delete</button></div>`).join("");
-            initDragSort('alumniList', 'alumni', () => refreshAdminLists('alumni'));
+            if (listDiv) {
+                listDiv.innerHTML = db.alumni.map((a,i)=>`
+                    <div class="data-item" draggable="true" data-index="${i}">
+                        <span><strong>${a.name}</strong> — ${a.role}</span>
+                        <div class="data-actions">
+                            <button class="edit-btn" onclick="editAlumni(${i})">Edit</button>
+                            <button class="delete-btn" onclick="deleteAlumni(${i})">Delete</button>
+                        </div>
+                    </div>`).join("");
+                initDragSort('alumniList', 'alumni', () => refreshAdminLists('alumni'));
+            }
         } else if (tab === "community") {
             const listDiv = document.getElementById("communityList");
-            if (listDiv) listDiv.innerHTML = db.community.map((c,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>[${c.date}] ${c.type}</strong> ${c.content.substring(0,60)}</span><button class="delete-btn" onclick="deleteCommunity(${i})">Delete</button></div>`).join("");
-            initDragSort('communityList', 'community', () => refreshAdminLists('community'));
+            if (listDiv) {
+                listDiv.innerHTML = db.community.map((c,i)=>`
+                    <div class="data-item" draggable="true" data-index="${i}">
+                        <span><strong>[${c.date}] ${c.type}</strong> ${c.content.substring(0,60)}</span>
+                        <div class="data-actions">
+                            <button class="edit-btn" onclick="editCommunity(${i})">Edit</button>
+                            <button class="delete-btn" onclick="deleteCommunity(${i})">Delete</button>
+                        </div>
+                    </div>`).join("");
+                initDragSort('communityList', 'community', () => refreshAdminLists('community'));
+            }
         } else if (tab === "events") {
             const listDiv = document.getElementById("eventList");
-            if (listDiv) listDiv.innerHTML = db.events.map((e,i)=>`<div class="data-item" draggable="true" data-index="${i}"><span><strong>${e.date}</strong> ${e.title}<br><small>${e.location}</small></span><button class="delete-btn" onclick="deleteEvent(${i})">Delete</button></div>`).join("");
-            initDragSort('eventList', 'events', () => refreshAdminLists('events'));
+            if (listDiv) {
+                listDiv.innerHTML = db.events.map((e,i)=>`
+                    <div class="data-item" draggable="true" data-index="${i}">
+                        <span><strong>${e.date}</strong> ${e.title}<br><small>${e.location} · ${e.media ? e.media.length : 0} media items</small></span>
+                        <div class="data-actions">
+                            <button class="edit-btn" onclick="editEvent(${i})">Edit</button>
+                            <button class="delete-btn" onclick="deleteEvent(${i})">Delete</button>
+                        </div>
+                    </div>`).join("");
+                initDragSort('eventList', 'events', () => refreshAdminLists('events'));
+            }
         }
     }
-    
-    window.deletePub = (idx) => { db.publications.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
-    window.deleteMember = (idx) => { db.members.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
-    window.deleteAlumni = (idx) => { db.alumni.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
-    window.deleteCommunity = (idx) => { db.community.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
-    window.deleteEvent = (idx) => { db.events.splice(idx,1); saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
-    
-    function addPublicationAdmin() {
-        db.publications.push({ year: document.getElementById("pubYear").value, title: document.getElementById("pubTitle").value, authors: document.getElementById("pubAuthors").value, journal: document.getElementById("pubJournal").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
-        document.getElementById("adminPubForm").reset();
+
+    // ==================== 增删改查操作 ====================
+    async function addPublicationAdmin() {
+        const year = document.getElementById("pubYear").value;
+        const title = document.getElementById("pubTitle").value;
+        const authors = document.getElementById("pubAuthors").value;
+        const journal = document.getElementById("pubJournal").value;
+        if (year && title && authors && journal) {
+            db.publications.push({ year: parseInt(year), title, authors, journal });
+            await syncTable('publications', db.publications);
+            await refreshAfterChange('publications');
+            refreshAdminLists('publications');
+            document.getElementById("adminPubForm").reset();
+        } else alert("Please fill all fields");
     }
-    function addMemberAdmin() {
-        db.members.push({ name: document.getElementById("memName").value, title: document.getElementById("memTitle").value, bio: document.getElementById("memBio").value, photo: document.getElementById("memPhoto").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
-        document.getElementById("adminMemberForm").reset();
+
+    async function addMemberAdmin() {
+        const name = document.getElementById("memName").value;
+        const title = document.getElementById("memTitle").value;
+        const bio = document.getElementById("memBio").value;
+        const photo = document.getElementById("memPhoto").value;
+        if (name && title) {
+            db.members.push({ name, title, bio, photo });
+            await syncTable('members', db.members);
+            await refreshAfterChange('members');
+            refreshAdminLists('members');
+            document.getElementById("adminMemberForm").reset();
+        } else alert("Name and title required");
     }
-    function addAlumniAdmin() {
-        db.alumni.push({ name: document.getElementById("alumName").value, role: document.getElementById("alumRole").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
-        document.getElementById("adminAlumniForm").reset();
+
+    async function addAlumniAdmin() {
+        const name = document.getElementById("alumName").value;
+        const role = document.getElementById("alumRole").value;
+        if (name && role) {
+            db.alumni.push({ name, role });
+            await syncTable('alumni', db.alumni);
+            await refreshAfterChange('alumni');
+            refreshAdminLists('alumni');
+            document.getElementById("adminAlumniForm").reset();
+        } else alert("Name and role required");
     }
-    function addCommunityAdmin() {
-        db.community.push({ date: document.getElementById("commDate").value, type: document.getElementById("commType").value, content: document.getElementById("commContent").value, link: document.getElementById("commLink").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
-        document.getElementById("adminCommunityForm").reset();
+
+    async function addCommunityAdmin() {
+        const date = document.getElementById("commDate").value;
+        const type = document.getElementById("commType").value;
+        const content = document.getElementById("commContent").value;
+        const link = document.getElementById("commLink").value;
+        if (date && content) {
+            db.community.push({ date, type, content, link });
+            await syncTable('community', db.community);
+            await refreshAfterChange('community');
+            refreshAdminLists('community');
+            document.getElementById("adminCommunityForm").reset();
+        } else alert("Date and content required");
     }
-    function addEventAdmin() {
-        db.events.push({ date: document.getElementById("eventDate").value, title: document.getElementById("eventTitle").value, description: document.getElementById("eventDesc").value, location: document.getElementById("eventLoc").value, photo: document.getElementById("eventPhoto").value });
-        saveData(); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage);
-        document.getElementById("adminEventForm").reset();
+
+    async function addEventAdmin() {
+        const date = document.getElementById("eventDate").value;
+        const title = document.getElementById("eventTitle").value;
+        const description = document.getElementById("eventDesc").value;
+        const location = document.getElementById("eventLoc").value;
+        const mediaGroups = document.querySelectorAll("#eventMediaContainer .media-group");
+        const media = [];
+        mediaGroups.forEach(group => {
+            const type = group.querySelector('.eventMediaType').value;
+            const url = group.querySelector('.eventMediaUrl').value.trim();
+            if (url) media.push({ type, url });
+        });
+        if (date && title && location) {
+            db.events.push({ date, title, description, location, media });
+            await syncTable('events', db.events);
+            await refreshAfterChange('events');
+            refreshAdminLists('events');
+            document.getElementById("adminEventForm").reset();
+            const container = document.getElementById("eventMediaContainer");
+            container.innerHTML = `<div class="media-group" data-media-index="0">
+                <div class="media-row">
+                    <select class="eventMediaType"><option value="image">Image</option><option value="video">Video</option></select>
+                    <input type="text" class="eventMediaUrl" placeholder="URL">
+                    <button type="button" class="removeMediaBtnForm"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+            attachRemoveFormEvents(container);
+        } else alert("Date, title and location required");
     }
-    
-    // 管理员模式开关
+
+    window.deletePub = async (idx) => { db.publications.splice(idx,1); await syncTable('publications', db.publications); await refreshAfterChange('publications'); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
+    window.deleteMember = async (idx) => { db.members.splice(idx,1); await syncTable('members', db.members); await refreshAfterChange('members'); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
+    window.deleteAlumni = async (idx) => { db.alumni.splice(idx,1); await syncTable('alumni', db.alumni); await refreshAfterChange('alumni'); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
+    window.deleteCommunity = async (idx) => { db.community.splice(idx,1); await syncTable('community', db.community); await refreshAfterChange('community'); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
+    window.deleteEvent = async (idx) => { db.events.splice(idx,1); await syncTable('events', db.events); await refreshAfterChange('events'); refreshAdminLists(currentAdminTab); renderPublicPage(currentPage); };
+
+    window.editPublication = (idx) => showEditModal('publications', idx);
+    window.editMember = (idx) => showEditModal('members', idx);
+    window.editAlumni = (idx) => showEditModal('alumni', idx);
+    window.editCommunity = (idx) => showEditModal('community', idx);
+    window.editEvent = (idx) => showEditModal('events', idx);
+
+    // ==================== 管理员登录与模式切换 ====================
+    function showAuthModal(callback) {
+        const modalDiv = document.createElement("div");
+        modalDiv.className = "modal";
+        modalDiv.innerHTML = `
+            <div class="modal-content">
+                <h3>Admin Access</h3>
+                <input type="email" id="adminEmail" placeholder="Email" style="width:100%; padding:8px; margin-bottom:12px;">
+                <input type="password" id="adminPassword" placeholder="Password" style="width:100%; padding:8px; margin-bottom:12px;">
+                <button id="authSubmit" class="admin-btn">Login</button>
+                <button id="authCancel" style="margin-left:12px;">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        const submitBtn = modalDiv.querySelector("#authSubmit");
+        const cancelBtn = modalDiv.querySelector("#authCancel");
+        const emailInput = modalDiv.querySelector("#adminEmail");
+        const passwordInput = modalDiv.querySelector("#adminPassword");
+        submitBtn.onclick = async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert("Login failed: " + error.message);
+            } else {
+                modalDiv.remove();
+                callback(true);
+            }
+        };
+        cancelBtn.onclick = () => {
+            modalDiv.remove();
+            callback(false);
+        };
+    }
+
+    function enterAdmin() {
+        if (isAdminMode) return;
+        showAuthModal(async (success) => {
+            if (success) setAdminMode(true);
+        });
+    }
+
     function setAdminMode(active) {
         isAdminMode = active;
         const publicNav = document.getElementById("publicNav");
@@ -678,9 +1145,7 @@
             publicContainer.style.display = "none";
             adminContainer.classList.add("active");
             renderAdminTab(currentAdminTab);
-            if (window.location.pathname !== "/admin") {
-                history.pushState(null, "", "/admin");
-            }
+            if (window.location.pathname !== "/admin") history.pushState(null, "", "/admin");
         } else {
             publicNav.style.display = "flex";
             adminNav.style.display = "none";
@@ -689,58 +1154,15 @@
             renderPublicPage(currentPage);
             updateNavActive(currentPage);
             const targetPath = currentPage === "home" ? "/" : `/${currentPage}`;
-            if (window.location.pathname !== targetPath) {
-                history.pushState(null, "", targetPath);
-            }
+            if (window.location.pathname !== targetPath) history.pushState(null, "", targetPath);
+            supabaseClient.auth.signOut();
         }
     }
-    
-    // 2FA 验证模态框
-    function showAuthModal(callback) {
-        const modalDiv = document.createElement("div");
-        modalDiv.className = "modal";
-        modalDiv.innerHTML = `
-            <div class="modal-content">
-                <h3>Admin Access</h3>
-                <input type="password" id="adminPassword" placeholder="Password" style="width:100%; padding:8px; margin-bottom:12px;">
-                <input type="text" id="admin2FA" placeholder="2FA Code (e.g., 123456)" style="width:100%; padding:8px; margin-bottom:12px;">
-                <button id="authSubmit" class="admin-btn">Verify</button>
-                <button id="authCancel" style="margin-left:12px;">Cancel</button>
-            </div>
-        `;
-        document.body.appendChild(modalDiv);
-        const submitBtn = modalDiv.querySelector("#authSubmit");
-        const cancelBtn = modalDiv.querySelector("#authCancel");
-        const passwordInput = modalDiv.querySelector("#adminPassword");
-        const codeInput = modalDiv.querySelector("#admin2FA");
-        submitBtn.onclick = () => {
-            const pwd = passwordInput.value;
-            const code = codeInput.value;
-            if (pwd === "LiangLab2026" && code === "123456") {
-                modalDiv.remove();
-                callback(true);
-            } else {
-                alert("Invalid credentials");
-            }
-        };
-        cancelBtn.onclick = () => {
-            modalDiv.remove();
-            callback(false);
-        };
-    }
-    
-    function enterAdmin() {
-        if (isAdminMode) return;
-        showAuthModal((success) => {
-            if (success) setAdminMode(true);
-        });
-    }
-    
+
     function navigateTo(path, push = true) {
         let page = path === "/" ? "home" : path.slice(1);
         const validPages = ["home","research","publications","members","alumni","community","events","contact"];
         if (!validPages.includes(page)) page = "home";
-        
         if (push) {
             const newPath = page === "home" ? "/" : `/${page}`;
             history.pushState(null, "", newPath);
@@ -750,55 +1172,46 @@
         renderPublicPage(page);
         updateNavActive(page);
     }
-    
+
     function updateNavActive(page) {
         document.querySelectorAll("#publicNav a").forEach(link => {
             const href = link.getAttribute("href");
-            if (href === `/${page}` || (page === "home" && href === "/")) {
-                link.classList.add("active");
-            } else {
-                link.classList.remove("active");
-            }
+            if (href === `/${page}` || (page === "home" && href === "/")) link.classList.add("active");
+            else link.classList.remove("active");
         });
     }
-    
-    // 键盘快捷键 Ctrl+Shift+A
+
     document.addEventListener("keydown", (e) => {
         if (e.ctrlKey && e.shiftKey && e.key === "A") {
             e.preventDefault();
             enterAdmin();
         }
     });
-    
+
     document.getElementById("homeLink").addEventListener("click", (e) => {
         e.preventDefault();
         navigateTo("/");
     });
-    
     document.querySelectorAll("#publicNav a").forEach(link => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
-            const href = link.getAttribute("href");
-            navigateTo(href);
+            navigateTo(link.getAttribute("href"));
         });
     });
-    
     document.getElementById("exitAdminBtn").addEventListener("click", (e) => {
         e.preventDefault();
         navigateTo("/");
     });
-    
     document.querySelectorAll("#adminNavBar a[data-admin-tab]").forEach(link => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
-            const tab = link.getAttribute("data-admin-tab");
-            currentAdminTab = tab;
-            renderAdminTab(tab);
+            currentAdminTab = link.getAttribute("data-admin-tab");
+            renderAdminTab(currentAdminTab);
             document.querySelectorAll("#adminNavBar a").forEach(l => l.classList.remove("active"));
             link.classList.add("active");
         });
     });
-    
+
     function setLanguage(lang) {
         currentLang = lang;
         if (!isAdminMode) renderPublicPage(currentPage);
@@ -807,16 +1220,13 @@
     }
     document.getElementById("langEnFooter").addEventListener("click", () => setLanguage("en"));
     document.getElementById("langFrFooter").addEventListener("click", () => setLanguage("fr"));
-    
+
     function handleInitialRoute() {
         const path = window.location.pathname;
-        if (path === "/admin") {
-            enterAdmin();
-        } else {
-            navigateTo(path, false);
-        }
+        if (path === "/admin") enterAdmin();
+        else navigateTo(path, false);
     }
-    
+
     window.addEventListener("popstate", () => {
         const path = window.location.pathname;
         if (path === "/admin") {
@@ -826,10 +1236,12 @@
             navigateTo(path, false);
         }
     });
-    
-    loadData();
-    handleInitialRoute();
-    setLanguage("en");
+
+    (async () => {
+        await loadData();
+        handleInitialRoute();
+        setLanguage("en");
+    })();
 </script>
 </body>
 </html>
