@@ -445,10 +445,33 @@
     // ==================== Supabase 操作函数 ====================
     async function syncTable(tableName, dataArray) {
         if (!isAdminMode) return;
-        const updated = dataArray.map((item, idx) => ({ ...item, sort_order: idx }));
+        
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+            setAdminMode(false);
+            alert("Session expired. Please log in again.");
+            return;
+        }
+
+        // 为每条记录附加 sort_order，并清除 undefined 的 id（新记录）
+        const updated = dataArray.map((item, idx) => {
+            const newItem = { ...item, sort_order: idx };
+            // 如果 id 为 undefined 或 null，则删除该字段，让数据库自动生成
+            if (newItem.id === undefined || newItem.id === null) {
+                delete newItem.id;
+            }
+            return newItem;
+        });
+
+        console.log(`Syncing ${tableName}:`, updated); // 查看发送的数据
+
         const { error } = await supabaseClient.from(tableName).upsert(updated, { onConflict: 'id' });
-        if (error) console.error(`Error syncing ${tableName}:`, error);
-        else console.log(`${tableName} synced`);
+        if (error) {
+            console.error(`Error syncing ${tableName}:`, error);
+            alert(`Failed to sync ${tableName}: ${error.message}`);  // 弹出具体错误
+        } else {
+            console.log(`${tableName} synced`);
+        }
     }
 
     async function loadData() {
@@ -996,7 +1019,8 @@
 
     // ==================== 增删改查操作 ====================
     async function addPublicationAdmin() {
-        const year = document.getElementById("pubYear").value;
+        const year = parseInt(document.getElementById("pubYear").value);
+        if (isNaN(year)) { alert("Year must be a number"); return; }
         const title = document.getElementById("pubTitle").value;
         const authors = document.getElementById("pubAuthors").value;
         const journal = document.getElementById("pubJournal").value;
