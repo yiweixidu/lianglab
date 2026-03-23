@@ -1029,12 +1029,19 @@
         const authors = document.getElementById("pubAuthors").value;
         const journal = document.getElementById("pubJournal").value;
         if (year && title && authors && journal) {
-            // 新记录不包含 id
+            // 推送新记录（无 id）
             db.publications.push({ year, title, authors, journal });
+            // 同步到 Supabase
             await syncTable('publications', db.publications);
-            // syncTable 内部已经调用了 refreshAfterChange，无需重复
+            // 关键：从数据库重新加载最新数据，覆盖本地数组，确保每条记录都有正确的 id
+            await refreshAfterChange('publications');
+            // 刷新管理面板
+            refreshAdminLists('publications');
+            // 清空表单
             document.getElementById("adminPubForm").reset();
-        } else alert("Please fill all fields");
+        } else {
+            alert("Please fill all fields");
+        }
     }
 
     async function addMemberAdmin() {
