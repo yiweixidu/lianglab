@@ -445,8 +445,7 @@
     // ==================== Supabase 操作函数 ====================
     async function syncTable(tableName, dataArray) {
         if (!isAdminMode) return;
-        
-        // 检查登录会话
+
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) {
             setAdminMode(false);
@@ -454,25 +453,31 @@
             return;
         }
 
-        // 为每条记录附加 sort_order，并清除无效的 id
-        const updated = dataArray.map((item, idx) => {
-            const newItem = { ...item, sort_order: idx };
-            // 只有当 id 是数字（且大于 0）时才保留，否则删除字段
-            if (typeof newItem.id !== 'number' || isNaN(newItem.id) || newItem.id <= 0) {
+        // 彻底清理：只保留有效 id（正整数），否则删除 id 字段
+        const cleaned = dataArray.map((item, idx) => {
+            // 深拷贝，避免修改原对象
+            const newItem = JSON.parse(JSON.stringify(item));
+            // 添加排序字段
+            newItem.sort_order = idx;
+            // 只有当 id 是正整数时才保留
+            if (typeof newItem.id === 'number' && Number.isInteger(newItem.id) && newItem.id > 0) {
+                // 保留
+            } else {
                 delete newItem.id;
             }
             return newItem;
         });
 
-        // 打印发送数据，便于调试
-        console.log(`Syncing ${tableName}:`, JSON.parse(JSON.stringify(updated)));
+        console.log(`Syncing ${tableName}:`, cleaned.map(i => ({ ...i, id: i.id || 'NEW' })));
 
-        const { error } = await supabaseClient.from(tableName).upsert(updated, { onConflict: 'id' });
+        const { error } = await supabaseClient.from(tableName).upsert(cleaned, { onConflict: 'id' });
         if (error) {
             console.error(`Error syncing ${tableName}:`, error);
             alert(`Failed to sync ${tableName}: ${error.message}`);
         } else {
             console.log(`${tableName} synced`);
+            // 同步成功后立即重新加载，确保 id 更新
+            await refreshAfterChange(tableName);
         }
     }
 
@@ -497,7 +502,10 @@
 
     async function refreshAfterChange(tableName) {
         const { data, error } = await supabaseClient.from(tableName).select('*').order('sort_order', { ascending: true });
-        if (!error && data) db[tableName] = data;
+        if (!error && data) {
+            // 过滤掉可能存在的无效 id（防止 null 或 0）
+            db[tableName] = data.filter(item => item.id && typeof item.id === 'number' && item.id > 0);
+        }
         if (!isAdminMode) renderPublicPage(currentPage);
         else renderAdminTab(currentAdminTab);
     }
@@ -1027,10 +1035,10 @@
         const authors = document.getElementById("pubAuthors").value;
         const journal = document.getElementById("pubJournal").value;
         if (year && title && authors && journal) {
-            db.publications.push({ year: parseInt(year), title, authors, journal });
+            // 新记录不包含 id
+            db.publications.push({ year, title, authors, journal });
             await syncTable('publications', db.publications);
-            await refreshAfterChange('publications');
-            refreshAdminLists('publications');
+            // syncTable 内部已经调用了 refreshAfterChange，无需重复
             document.getElementById("adminPubForm").reset();
         } else alert("Please fill all fields");
     }
