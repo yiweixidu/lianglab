@@ -453,22 +453,27 @@
             return;
         }
 
-        // 彻底清理：只保留有效 id（正整数），否则删除 id 字段
+        // 清理所有记录：确保 id 是有效数字，否则删除 id 字段
         const cleaned = dataArray.map((item, idx) => {
             // 深拷贝，避免修改原对象
             const newItem = JSON.parse(JSON.stringify(item));
-            // 添加排序字段
             newItem.sort_order = idx;
-            // 只有当 id 是正整数时才保留
-            if (typeof newItem.id === 'number' && Number.isInteger(newItem.id) && newItem.id > 0) {
-                // 保留
+            // 处理 id
+            if (newItem.id !== undefined && newItem.id !== null) {
+                const idNum = Number(newItem.id);
+                if (Number.isInteger(idNum) && idNum > 0) {
+                    newItem.id = idNum;  // 确保是数字
+                } else {
+                    delete newItem.id;
+                    console.warn(`Removed invalid id for item:`, newItem);
+                }
             } else {
                 delete newItem.id;
             }
             return newItem;
         });
 
-        console.log(`Syncing ${tableName}:`, cleaned.map(i => ({ ...i, id: i.id || 'NEW' })));
+        console.log(`Syncing ${tableName} (${cleaned.length} items):`, cleaned.map(i => ({ ...i, id: i.id || 'NEW' })));
 
         const { error } = await supabaseClient.from(tableName).upsert(cleaned, { onConflict: 'id' });
         if (error) {
@@ -476,7 +481,7 @@
             alert(`Failed to sync ${tableName}: ${error.message}`);
         } else {
             console.log(`${tableName} synced`);
-            // 同步成功后立即重新加载，确保 id 更新
+            // 同步成功后，重新加载该表数据，确保本地 db 与数据库完全一致
             await refreshAfterChange(tableName);
         }
     }
@@ -503,8 +508,8 @@
     async function refreshAfterChange(tableName) {
         const { data, error } = await supabaseClient.from(tableName).select('*').order('sort_order', { ascending: true });
         if (!error && data) {
-            // 过滤掉可能存在的无效 id（防止 null 或 0）
-            db[tableName] = data.filter(item => item.id && typeof item.id === 'number' && item.id > 0);
+            // 确保 id 是数字，过滤掉可能的 null（实际上不应该有）
+            db[tableName] = data.map(item => ({ ...item, id: Number(item.id) })).filter(item => !isNaN(item.id) && item.id > 0);
         }
         if (!isAdminMode) renderPublicPage(currentPage);
         else renderAdminTab(currentAdminTab);
