@@ -453,27 +453,21 @@
             return;
         }
 
-        // 清理所有记录：确保 id 是有效数字，否则删除 id 字段
+        // 使用解构分离 id，确保无效 id 不会被加入新对象
         const cleaned = dataArray.map((item, idx) => {
-            // 深拷贝，避免修改原对象
-            const newItem = JSON.parse(JSON.stringify(item));
-            newItem.sort_order = idx;
-            // 处理 id
-            if (newItem.id !== undefined && newItem.id !== null) {
-                const idNum = Number(newItem.id);
-                if (Number.isInteger(idNum) && idNum > 0) {
-                    newItem.id = idNum;  // 确保是数字
-                } else {
-                    delete newItem.id;
-                    console.warn(`Removed invalid id for item:`, newItem);
-                }
-            } else {
-                delete newItem.id;
+            const { id, ...rest } = item;        // 将原对象的 id 分离出来
+            const newItem = { ...rest, sort_order: idx };  // 新对象不包含 id
+            // 只有当 id 是正整数时才添加回新对象
+            if (typeof id === 'number' && Number.isInteger(id) && id > 0) {
+                newItem.id = id;
             }
             return newItem;
         });
 
-        console.log(`Syncing ${tableName} (${cleaned.length} items):`, cleaned.map(i => ({ ...i, id: i.id || 'NEW' })));
+        console.log(`Syncing ${tableName} (${cleaned.length} items):`, cleaned.map(i => ({
+            ...i,
+            id: i.id !== undefined ? i.id : 'NEW'
+        })));
 
         const { error } = await supabaseClient.from(tableName).upsert(cleaned, { onConflict: 'id' });
         if (error) {
@@ -481,7 +475,6 @@
             alert(`Failed to sync ${tableName}: ${error.message}`);
         } else {
             console.log(`${tableName} synced`);
-            // 同步成功后，重新加载该表数据，确保本地 db 与数据库完全一致
             await refreshAfterChange(tableName);
         }
     }
