@@ -446,6 +446,7 @@
     async function syncTable(tableName, dataArray) {
         if (!isAdminMode) return;
         
+        // 检查登录会话
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) {
             setAdminMode(false);
@@ -453,22 +454,23 @@
             return;
         }
 
-        // 为每条记录附加 sort_order，并清除 undefined 的 id（新记录）
+        // 为每条记录附加 sort_order，并清除无效的 id
         const updated = dataArray.map((item, idx) => {
             const newItem = { ...item, sort_order: idx };
-            // 如果 id 为 undefined 或 null，则删除该字段，让数据库自动生成
-            if (newItem.id === undefined || newItem.id === null) {
+            // 只有当 id 是数字（且大于 0）时才保留，否则删除字段
+            if (typeof newItem.id !== 'number' || isNaN(newItem.id) || newItem.id <= 0) {
                 delete newItem.id;
             }
             return newItem;
         });
 
-        console.log(`Syncing ${tableName}:`, updated); // 查看发送的数据
+        // 打印发送数据，便于调试
+        console.log(`Syncing ${tableName}:`, JSON.parse(JSON.stringify(updated)));
 
         const { error } = await supabaseClient.from(tableName).upsert(updated, { onConflict: 'id' });
         if (error) {
             console.error(`Error syncing ${tableName}:`, error);
-            alert(`Failed to sync ${tableName}: ${error.message}`);  // 弹出具体错误
+            alert(`Failed to sync ${tableName}: ${error.message}`);
         } else {
             console.log(`${tableName} synced`);
         }
